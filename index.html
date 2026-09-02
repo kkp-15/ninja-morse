@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<!--
+═══════════ 開発メモ ═══════════
+モールス信号を「分岐する木」として辿るデコーダー。音を解析する装置ではなく、
+仕組みを直感的に理解するための学習ツール（元ネタの装置と同じ考え方）。
+
+■ 設計ルール
+- 単一HTML / フレームワークなし / Cloudflare Pages
+- 点=●で左へ、線=■で右へ。深さ1〜4がちょうどA〜Zの26文字になる
+- MORSE は正本。木はここから生成するので、表と木が食い違うことはない
+- UIに装飾絵文字を使わない
+════════════════════════════
+-->
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#F08A3C">
+<title>モールス信号の分岐表｜たどるだけで読める無料デコーダー</title>
+<meta name="description" content="点と線をタップすると分岐をたどって文字が決まる、モールス信号の学習ツール。A〜Zがなぜその形なのかが木で一目で分かります。表引き・逆引き・和文の一覧つき。無料・登録不要。">
+<link rel="canonical" href="https://morse.kkpwebninja.com/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="モールス信号の分岐表｜たどるだけで読める">
+<meta property="og:description" content="点と線をタップして分岐をたどるだけ。モールス信号の仕組みが直感で分かる無料の学習ツール。">
+<meta property="og:url" content="https://morse.kkpwebninja.com/">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta property="og:site_name" content="モールス信号の分岐表">
+<meta property="og:image" content="https://morse.kkpwebninja.com/ogp.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://morse.kkpwebninja.com/ogp.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "モールス信号の分岐表",
+  "url": "https://morse.kkpwebninja.com/",
+  "description": "点と線をたどって文字を読み解く、モールス信号の無料学習ツール。電鍵を模したボタンで打鍵でき、分岐図で仕組みが一目で分かります。",
+  "applicationCategory": "GameApplication",
+  "operatingSystem": "Web",
+  "offers": {"@type":"Offer","price":"0","priceCurrency":"JPY"},
+  "author": {"@type":"Organization","name":"web忍者の砦"}
+}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2LM85GJN0L"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-2LM85GJN0L');
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1298304917726270" crossorigin="anonymous"></script>
+<style>
+:root{
+  --orange:#F08A3C; --orange-deep:#E06A20; --cream:#FBEFDC; --cream-deep:#F7E3C6;
+  --ink:#4A3B28; --ink-soft:#8A7560; --line:#EFD9B6; --paper:#FFFCF7;
+  --dot:#3EB8CE; --dash:#F0615C; --ok:#5BB97E;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN",system-ui,sans-serif;
+  line-height:1.7;-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--orange),var(--orange-deep));color:#fff;
+  padding:14px 16px;text-align:center}
+header h1{margin:0;font-size:18px;font-weight:800;letter-spacing:.01em}
+header p{margin:4px 0 0;font-size:12px;opacity:.95}
+main{max-width:820px;margin:0 auto;padding:14px 12px 40px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+h2{font-size:16px;margin:0 0 10px;font-weight:800}
+
+/* 現在の入力 */
+.now{background:var(--cream);border:2px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+.sig{min-height:44px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.sig .m{display:inline-block}
+.sig .m.d{width:20px;height:20px;border-radius:50%;background:var(--dot)}
+.sig .m.h{width:34px;height:20px;border-radius:6px;background:var(--dash)}
+.sig .ph{color:var(--ink-soft);font-size:13px}
+.res{font-size:52px;font-weight:800;line-height:1.15;margin:4px 0 0;min-height:60px}
+.res.none{font-size:15px;font-weight:700;color:var(--ink-soft);min-height:60px;
+  display:flex;align-items:center;justify-content:center}
+.auto{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:8px;font-size:12px;color:var(--ink-soft);flex-wrap:wrap}
+.auto label{display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:700;color:var(--ink)}
+.auto input{width:17px;height:17px;accent-color:var(--orange)}
+.bar{height:5px;background:var(--cream-deep);border-radius:99px;overflow:hidden;margin-top:9px}
+.bar>i{display:block;height:100%;width:0;background:var(--orange);border-radius:99px}
+.bar.off{visibility:hidden}
+
+/* 操作 */
+/* 電鍵。押している長さで点と線が決まる（実物と同じ考え方） */
+.key{margin-top:10px;text-align:center}
+.keybtn{width:100%;max-width:360px;padding:11px 12px 12px;border:0;border-radius:20px;cursor:pointer;
+  background:linear-gradient(180deg,#5A4632,#3A2E20);color:#fff;font:inherit;font-weight:800;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 8px 0 #291F15, 0 14px 24px rgba(74,59,40,.28);
+  touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+  transition:transform .05s, box-shadow .05s}
+.keybtn:active,.keybtn.down{transform:translateY(6px);box-shadow:0 2px 0 #291F15, 0 6px 12px rgba(74,59,40,.3)}
+/* 押せると分かるように：つまみが呼吸し、まわりに波紋が出る。
+   触れたら止まる（押し方が分かった人には邪魔なので）。 */
+.keybtn .knob{width:52px;height:52px;border-radius:50%;position:relative;
+  background:radial-gradient(circle at 35% 30%,#FFD9A8,#D9903F 60%,#A8641F);
+  box-shadow:inset 0 -3px 6px rgba(0,0,0,.3), 0 0 0 0 rgba(255,214,150,.5);
+  animation:knobPulse 2.1s ease-in-out infinite}
+.keybtn .knob::after{content:"";position:absolute;inset:-10px;border-radius:50%;
+  border:2px solid rgba(255,214,150,.55);animation:knobRing 2.1s ease-out infinite}
+.keybtn.down .knob,.keybtn.used .knob{animation:none;box-shadow:inset 0 -3px 6px rgba(0,0,0,.3)}
+.keybtn.down .knob::after,.keybtn.used .knob::after{display:none}
+@keyframes knobPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes knobRing{0%{transform:scale(.85);opacity:.9}70%{transform:scale(1.25);opacity:0}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.keybtn .knob{animation:none}.keybtn .knob::after{display:none}}
+/* 電鍵の中に説明をまとめる。周りに文字を置かないための作り */
+.kguide{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+.kg{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:800;
+  background:rgba(255,255,255,.10);border-radius:10px;padding:6px 4px;line-height:1.35}
+.kg i{font-style:normal;font-size:10.5px;font-weight:600;opacity:.75}
+.kg .s{display:block;background:var(--dot);border-radius:99px;height:9px;width:9px;margin-bottom:1px}
+.kg.h .s{background:var(--dash);width:20px;border-radius:3px}
+.kstat{font-size:12.5px;font-weight:700;letter-spacing:.02em;opacity:.9;min-height:18px}
+.keybtn.down .kstat{opacity:1}
+.keybtn.down .kg{background:rgba(255,255,255,.06)}
+.pad{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.pad button{border:0;border-radius:13px;padding:9px 8px;font:inherit;font-weight:800;
+  font-size:14px;color:#fff;cursor:pointer;min-height:52px;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.pad .row1{display:flex;align-items:center;gap:9px}
+.pad .dir{font-size:10.5px;font-weight:700;opacity:.9;letter-spacing:.03em}
+.pad .bd{background:var(--dot)} .pad .bh{background:var(--dash)}
+.pad button:active{transform:translateY(1px)}
+.pad .icon{display:inline-block}
+.pad .icon.d{width:16px;height:16px;border-radius:50%;background:#fff}
+.pad .icon.h{width:28px;height:16px;border-radius:5px;background:#fff}
+.sub{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+.sub button{border:2px solid var(--line);background:#fff;color:var(--ink);border-radius:12px;
+  padding:11px 6px;font:inherit;font-weight:700;font-size:13px;cursor:pointer;min-height:46px}
+.sub button:disabled{opacity:.4;cursor:not-allowed}
+.sub .go{border-color:var(--ok);color:#2f6b46}
+
+/* 出力 */
+.out{margin-top:12px;background:var(--cream);border-radius:12px;padding:11px;min-height:52px;
+  font-size:22px;font-weight:800;letter-spacing:.06em;word-break:break-all}
+.out .ph{font-size:13px;font-weight:500;color:var(--ink-soft);letter-spacing:0}
+.outbtns{display:flex;gap:8px;margin-top:8px}
+.outbtns button{flex:1;border:2px solid var(--line);background:#fff;color:var(--ink);
+  border-radius:11px;padding:9px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+
+/* 木 */
+/* 縦型の経路図。深さ4の木は末端が16個あり横に収まらないので、
+   辿っている道すじと次の2択だけを縦に見せる。全体図は下に別枠で置く。 */
+.pv{background:var(--cream);border:2px solid var(--line);border-radius:14px;padding:12px 8px}
+.pv-step{display:flex;align-items:center;justify-content:center;gap:9px;min-height:30px}
+.pv-sign{width:34px;text-align:right;font-size:12px;font-weight:800}
+.pv-sign .s{display:inline-block;vertical-align:middle}
+.pv-sign .s.d{width:13px;height:13px;border-radius:50%;background:var(--dot)}
+.pv-sign .s.h{width:24px;height:13px;border-radius:4px;background:var(--dash)}
+.pv-node{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:16px;background:#fff;border:2px solid var(--line);color:var(--ink)}
+.pv-node.cur{background:var(--orange);border-color:var(--orange-deep);color:#fff;
+  box-shadow:0 0 0 5px rgba(240,138,60,.2);width:62px;height:62px;font-size:32px}
+.pv-node.cur.root{width:44px;height:44px;font-size:14px}
+.pv-none{text-align:center;font-size:12.5px;font-weight:700;color:var(--ink-soft);margin-top:7px}
+.pv-node.root{font-size:12px}
+.pv-pad{width:34px}
+.pv-skip{font-size:11.5px;font-weight:700;color:var(--ink-soft);background:#fff;
+  border:1px dashed var(--line);border-radius:99px;padding:3px 10px}
+.pv-line{height:12px;width:2px;background:var(--line);margin:0 auto}
+.pv-kids{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.kid{border-radius:11px;padding:8px 6px;text-align:center;border:2px solid;background:#fff}
+.kid.d{border-color:var(--dot);background:#EAF7FA;color:#1d7d90}
+.kid.h{border-color:var(--dash);background:#FDEDEC;color:#B23A36}
+.kid.no{border-color:var(--line);color:var(--ink-soft);background:#fff}
+.kid .k1{font-size:11.5px;font-weight:700}
+.kid .k2{font-size:24px;font-weight:800;line-height:1.2}
+.treewrap{background:var(--cream);border:2px solid var(--line);border-radius:14px;padding:8px 4px}
+.tree svg{display:block;width:100%;height:auto}
+.deep{margin-top:7px;padding:8px 10px;background:#fff;border:2px solid var(--line);border-radius:11px;
+  text-align:center;font-size:13px;font-weight:700;color:var(--ink)}
+.deep b{color:var(--orange-deep);font-size:17px}
+.deep .xm{display:inline-block;vertical-align:middle;margin:0 2px}
+.deep .xm.d{width:11px;height:11px;border-radius:50%;background:var(--dot)}
+.deep .xm.h{width:20px;height:11px;border-radius:3px;background:var(--dash)}
+.deep .dn{display:block;font-size:11px;font-weight:500;color:var(--ink-soft);margin-top:3px}
+.tree svg{display:block}
+.hint{font-size:12px;color:var(--ink-soft);margin:6px 0 0}
+
+/* 一覧 */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:7px}
+.cell{border:1px solid var(--line);border-radius:10px;padding:7px 5px;text-align:center;background:#fff}
+.cell b{display:block;font-size:17px}
+.cell span{font-size:12px;color:var(--ink-soft);letter-spacing:.08em;white-space:nowrap}
+.tabs{display:flex;gap:8px;margin-bottom:10px}
+.tabs button{flex:1;border:2px solid var(--line);background:#fff;color:var(--ink);
+  border-radius:11px;padding:9px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+.tabs button.on{background:var(--orange);border-color:var(--orange);color:#fff}
+
+/* 逆引き */
+.rev input{width:100%;border:2px solid var(--line);border-radius:12px;padding:12px;
+  font:inherit;font-size:16px;background:#fff}
+.revout{margin-top:10px;background:var(--cream);border-radius:12px;padding:11px;min-height:48px;
+  font-size:17px;letter-spacing:.05em;word-break:break-all}
+.revout .w{display:inline-block;margin:0 9px 6px 0;white-space:nowrap}
+.revout .w i{font-style:normal;font-size:12px;color:var(--ink-soft);display:block;text-align:center}
+
+.note{font-size:12.5px;color:var(--ink-soft);margin:8px 0 0}
+/* 広告。読み込まれるまで高さを空けておき、記事が飛び跳ねないようにする。 */
+.ad-slot{margin:14px 0 4px;padding-top:12px;border-top:1px solid var(--line);text-align:center}
+.ad-label{font-size:10.5px;letter-spacing:.14em;color:var(--ink-soft);margin-bottom:5px}
+.ad-slot ins.adsbygoogle{display:block;width:320px;height:100px;margin:0 auto}
+@media(min-width:760px){ .ad-slot ins.adsbygoogle{width:728px;height:90px} }
+footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-soft)}
+@media(max-width:699px){
+  /* 経路図と電鍵を1画面に収めるための詰め。数字・記号（深さ5以上）でも入るようにする */
+  header{padding:11px 16px}
+  main{padding:10px 12px 40px}
+  .card{padding:11px}
+  .now{padding:9px}
+  .res{font-size:44px;min-height:50px}
+  .res.none{min-height:50px}
+  .pv{padding:9px 6px}
+  .pv-node.cur{width:56px;height:56px;font-size:29px}
+  .pv-step{min-height:26px}
+  .pv-node{width:32px;height:32px;font-size:15px}
+  .pv-line{height:9px}
+  .auto{margin-top:7px;gap:12px}
+  .key{margin-top:8px}
+  .keybtn{padding:9px 10px 10px}
+  .keybtn .knob{width:46px;height:46px}
+}
+@media(min-width:700px){ header h1{font-size:21px} .res{font-size:64px} }
+</style>
+</head>
+<body>
+<header>
+  <h1>モールス信号の分岐表</h1>
+  <p>点と線をたどるだけで、文字が決まります</p>
+</header>
+
+<main>
+  <section class="card">
+    <div class="treewrap"><div class="tree" id="tree"></div></div>
+    <div class="bar off" id="bar"><i></i></div>
+
+
+
+    <div class="key">
+      <button class="keybtn" id="keyBtn" type="button" aria-label="電鍵。短く押すと点、長く押すと線">
+        <span class="kguide">
+          <span class="kg d"><span class="s"></span>短く＝トン</span>
+          <span class="kg h"><span class="s"></span>長く＝ツー</span>
+        </span>
+        <span class="knob"></span>
+        <span class="kstat" id="live">ここを押してください</span>
+      </button>
+      <div class="auto">
+        <label><input type="checkbox" id="autoFix" checked>止めたら自動確定</label>
+        <label><input type="checkbox" id="sound" checked>音を鳴らす</label>
+      </div>
+    </div>
+    <div class="sub">
+      <button type="button" id="btnBack">1つ戻す</button>
+      <button type="button" id="btnClear">やり直す</button>
+      <button type="button" class="go" id="btnFix">確定する</button>
+    </div>
+
+    <div class="out" id="out"><span class="ph">確定した文字がここに並びます</span></div>
+    <div class="outbtns">
+      <button type="button" id="btnSpace">スペース</button>
+      <button type="button" id="btnDel">1文字消す</button>
+      <button type="button" id="btnPlay">音で聞く</button>
+      <button type="button" id="btnCopy">コピー</button>
+    </div>
+
+    <!-- 広告。出力とその操作ボタンの間には挟まない（機能が分断されるため）。
+         サイズは .ad-slot ins のCSSで標準規格に固定する。
+         インラインで高さを書くとCSSに勝ってしまうので書かない。
+         半端な幅で要求すると通常のバナー在庫が無く、文字だけのクリエイティブが返る。 -->
+    <div class="ad-slot" id="ad-after-out">
+      <div class="ad-label">広告</div>
+      <ins class="adsbygoogle" style="display:block"
+           data-ad-client="ca-pub-1298304917726270"
+           data-ad-slot="2937937957"
+           data-ad-format="horizontal"
+           data-full-width-responsive="false"></ins>
+    </div>
+    <p class="note">キーボード: <b>・</b>点 / <b>-</b>線 / Enter確定 / Backspace戻す / スペース語区切り</p>
+  </section>
+
+
+  <section class="card">
+    <h2>逆に引く（文字 → モールス）</h2>
+    <div class="rev">
+      <input id="revIn" type="text" placeholder="例: SOS / ARIGATO" autocomplete="off">
+    </div>
+    <div class="revout" id="revOut"><span class="ph">入力すると、下にモールスが出ます</span></div>
+  </section>
+
+  <section class="card">
+    <h2>一覧表</h2>
+    <div class="tabs">
+      <button type="button" class="on" data-set="alpha">アルファベット</button>
+      <button type="button" data-set="num">数字</button>
+      <button type="button" data-set="sym">記号</button>
+    </div>
+    <div class="grid" id="grid"></div>
+    <p class="note">国際モールス符号（ITU-R M.1677-1）に基づいています。</p>
+  </section>
+</main>
+
+<footer>
+  <p>点と線の長さの比は1:3、文字と文字の間は3、語と語の間は7が国際的な決まりです。<br>
+  このページは仕組みを学ぶための教材です。実際の通信には送受信の技能と資格が必要です。</p>
+</footer>
+
+<script>
+const MORSE = {
+  "A":".-",
+  "B":"-...",
+  "C":"-.-.",
+  "D":"-..",
+  "E":".",
+  "F":"..-.",
+  "G":"--.",
+  "H":"....",
+  "I":"..",
+  "J":".---",
+  "K":"-.-",
+  "L":".-..",
+  "M":"--",
+  "N":"-.",
+  "O":"---",
+  "P":".--.",
+  "Q":"--.-",
+  "R":".-.",
+  "S":"...",
+  "T":"-",
+  "U":"..-",
+  "V":"...-",
+  "W":".--",
+  "X":"-..-",
+  "Y":"-.--",
+  "Z":"--..",
+  "0":"-----",
+  "1":".----",
+  "2":"..---",
+  "3":"...--",
+  "4":"....-",
+  "5":".....",
+  "6":"-....",
+  "7":"--...",
+  "8":"---..",
+  "9":"----.",
+  ".":".-.-.-",
+  ",":"--..--",
+  "?":"..--..",
+  "'":".----.",
+  "!":"-.-.--",
+  "/":"-..-.",
+  "(":"-.--.",
+  ")":"-.--.-",
+  "&":".-...",
+  ":":"---...",
+  ";":"-.-.-.",
+  "=":"-...-",
+  "+":".-.-.",
+  "-":"-....-",
+  "_":"..--.-",
+  "\"":".-..-.",
+  "$":"...-..-",
+  "@":".--.-."
+};
+
+/* ===== 木を組み立てる（MORSEが正本。表と木がずれない） ===== */
+const TREE = {};
+for (const ch in MORSE) {
+  let n = TREE;
+  for (const c of MORSE[ch]) { n = (n[c] = n[c] || {}); }
+  n._ = ch;
+}
+const nodeAt = (p) => { let n = TREE; for (const c of p) { n = n && n[c]; if (!n) return null; } return n; };
+
+let path = '';      // いま辿っている経路（. と -）
+let preview = null; // 押している最中の行き先（'.' または '-'）
+let text = '';      // 確定した文字列
+
+const $ = (id) => document.getElementById(id);
+
+function render(){
+  const n = nodeAt(path);
+  const cur = n && n._;
+
+
+  $('btnFix').disabled = !cur;
+  $('btnBack').disabled = !path;
+
+  const out = $('out');
+  out.innerHTML = text ? text.replace(/ /g, '&nbsp;') : '<span class="ph">確定した文字がここに並びます</span>';
+  drawTree();
+}
+
+/* 本物のモールスは「間」で文字が切れる（文字間は3単位）。
+   その感覚に合わせ、入力が止まったら自動で確定する。
+   いきなり確定すると驚くので、残り時間をバーで見せる。 */
+const AUTO_MS = 1000;
+let autoTimer = null, autoRaf = null;
+
+function stopAuto(){
+  clearTimeout(autoTimer); cancelAnimationFrame(autoRaf);
+  autoTimer = autoRaf = null;
+  const bar = $('bar'); bar.classList.add('off'); bar.firstElementChild.style.width = '0';
+}
+function startAuto(){
+  stopAuto();
+  if (!$('autoFix').checked) return;
+  const n = nodeAt(path);
+  if (!path || !(n && n._)) return;          // 文字が確定していない位置では動かさない
+  const bar = $('bar'); bar.classList.remove('off');
+  const t0 = performance.now();
+  (function tick(){
+    const p = Math.min(1, (performance.now() - t0) / AUTO_MS);
+    bar.firstElementChild.style.width = (p * 100).toFixed(1) + '%';
+    if (p < 1) autoRaf = requestAnimationFrame(tick);
+  })();
+  autoTimer = setTimeout(() => { stopAuto(); fix(); }, AUTO_MS);
+}
+
+function push(c){ if (nodeAt(path + c)) { const a = ac(); if (a && a.state === 'suspended') a.resume(); playSign(c); path += c; render(); startAuto(); } }
+function fix(){ stopAuto(); const n = nodeAt(path); if (n && n._) { text += n._; path = ''; render(); } }
+
+/* ===== 木の描画 ===== */
+const DEPTH = 4;                      // 4段でA〜Zがちょうど収まる
+function drawTree(){
+  // 画面幅に収めるため viewBox で描き、CSSで width:100% にする。
+  const W = 344, ROW = 44, TOP = 30, BOT = 14, LX = 15;
+  const H = TOP + ROW * DEPTH + BOT;
+  const MX = LX + 8;
+  const xOf = (d, i) => MX + (W - MX - 9) * (i + 0.5) / (1 << d);
+  const yOf = (d) => TOP + ROW * d;
+  const rOf = (d) => d === 0 ? 11 : d === DEPTH ? 9.2 : 10.5;
+
+  // その節から先に文字があるか（無い枝は描かない。線だけ伸びて宙に浮くのを防ぐ）
+  function hasLabel(node, depth){
+    if (!node) return false;
+    if (node._) return true;
+    if (depth >= DEPTH) return false;
+    return hasLabel(node['.'], depth + 1) || hasLabel(node['-'], depth + 1);
+  }
+
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="モールス信号の分岐図">';
+
+  // 段の目盛り（何打目か）。深さ＝打った回数であることを示す。
+  for (let d = 1; d <= DEPTH; d++) {
+    s += '<line x1="' + LX + '" y1="' + yOf(d) + '" x2="' + (W - 4) + '" y2="' + yOf(d) +
+         '" stroke="#EFE0C4" stroke-width="1" stroke-dasharray="2 4"/>';
+    s += '<text x="' + (LX - 5) + '" y="' + (yOf(d) + 3.5) + '" text-anchor="middle" font-size="9" ' +
+         'font-weight="700" fill="#B8A183">' + d + '</text>';
+  }
+  s += '<text x="' + (LX - 5) + '" y="' + (TOP - 13) + '" text-anchor="middle" font-size="8" fill="#B8A183">打</text>';
+
+  // 枝
+  for (let d = 0; d < DEPTH; d++) {
+    for (let i = 0; i < (1 << d); i++) {
+      const p = codeOf(d, i); if (d > 0 && !nodeAt(p)) continue;
+      for (const [c, k] of [['.', 0], ['-', 1]]) {
+        const cp = p + c, cn = nodeAt(cp);
+        if (!hasLabel(cn, d + 1)) continue;                 // 行き止まりの枝は描かない
+        const on = path.startsWith(cp);
+        const x1 = xOf(d, i), y1 = yOf(d), x2 = xOf(d + 1, i * 2 + k), y2 = yOf(d + 1);
+        // トンは短い線、ツーは長い線。枝の長さそのものが符号を表す。
+        // 節どうしはうすい線でつなぎ、その上に「短点／長点」の太い線を重ねる。
+        const R = c === '.' ? 0.30 : 0.86;                 // 実際の比は1:3
+        const a = (1 - R) / 2, b = 1 - a;                  // 枝の中央に置く
+        const sx = x1 + (x2 - x1) * a, sy = y1 + (y2 - y1) * a;
+        const ex = x1 + (x2 - x1) * b, ey = y1 + (y2 - y1) * b;
+        const base = c === '.' ? '#3EB8CE' : '#F0615C';
+        s += '<line x1="' + x1.toFixed(1) + '" y1="' + y1 + '" x2="' + x2.toFixed(1) + '" y2="' + y2 +
+             '" stroke="#EBDCC0" stroke-width="1"/>';
+        s += '<line x1="' + sx.toFixed(1) + '" y1="' + sy.toFixed(1) + '" x2="' + ex.toFixed(1) + '" y2="' + ey.toFixed(1) +
+             '" stroke="' + (on ? '#F08A3C' : base) + '" stroke-width="' + (on ? 4.6 : 3.4) +
+             '" stroke-linecap="round"' + (on ? '' : ' opacity=".72"') + '/>';
+      }
+    }
+  }
+
+  // 節
+  for (let d = 0; d <= DEPTH; d++) {
+    for (let i = 0; i < (1 << d); i++) {
+      const p = codeOf(d, i);
+      const n = d === 0 ? TREE : nodeAt(p); if (!n) continue;
+      const label = d === 0 ? '始' : (n._ || '');
+      if (!label) continue;
+      const deep = path.length > DEPTH;
+      const here = deep ? (d === DEPTH && path.startsWith(p)) : (p === path);
+      const onPath = path.startsWith(p);
+      const isPrev = preview !== null && p === path + preview;
+      const x = xOf(d, i).toFixed(1), y = yOf(d);
+      const r = here ? 14.5 : (isPrev ? rOf(d) + 1.6 : rOf(d));
+      if (here) s += '<circle cx="' + x + '" cy="' + y + '" r="' + (r + 5) + '" fill="#F08A3C" opacity=".2"/>';
+      if (isPrev) {
+        const pc = preview === '.' ? '#3EB8CE' : '#F0615C';
+        s += '<circle cx="' + x + '" cy="' + y + '" r="' + (r + 6) + '" fill="none" stroke="' + pc +
+             '" stroke-width="2.6" stroke-dasharray="4 3"><animate attributeName="opacity" values="1;.35;1" dur="0.8s" repeatCount="indefinite"/></circle>';
+      }
+      s += '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' +
+           (here ? '#F08A3C' : isPrev ? (preview === '.' ? '#E8F6FA' : '#FDEEED') : onPath ? '#FBE3C6' : '#fff') +
+           '" stroke="' + (here ? '#E06A20' : isPrev ? (preview === '.' ? '#3EB8CE' : '#F0615C') : onPath ? '#E9A868' : '#DCC9A6') +
+           '" stroke-width="' + (here ? 2.4 : isPrev ? 2.2 : 1.3) + '"/>';
+      s += '<text x="' + x + '" y="' + (y + (here ? 5.8 : d === DEPTH ? 4 : 4.4)) + '" text-anchor="middle" font-size="' +
+           (here ? 16 : isPrev ? 13 : (d === 0 ? 9.5 : d === DEPTH ? 11 : 12)) + '" font-weight="800" fill="' +
+           (here ? '#fff' : isPrev ? (preview === '.' ? '#1d7d90' : '#B23A36') : '#4A3B28') + '">' + label + '</text>';
+    }
+  }
+
+  // 凡例（図の中に置く。外に文章を増やさないため）
+  s += '<g font-size="9.5" font-weight="800">' +
+       '<line x1="' + (MX + 2) + '" y1="12" x2="' + (MX + 10) + '" y2="12" stroke="#3EB8CE" stroke-width="3.4" stroke-linecap="round"/>' +
+       '<text x="' + (MX + 15) + '" y="15.5" fill="#1d7d90">短い線＝トン</text>' +
+       '<line x1="' + (MX + 84) + '" y1="12" x2="' + (MX + 108) + '" y2="12" stroke="#F0615C" stroke-width="3.4" stroke-linecap="round"/>' +
+       '<text x="' + (MX + 113) + '" y="15.5" fill="#B23A36">長い線＝ツー</text>' +
+       '</g>';
+  s += '</svg>';
+  let extra = '';
+  if (path.length > DEPTH) {
+    const head = nodeAt(path.slice(0, DEPTH));
+    const rest = [...path.slice(DEPTH)].map(c =>
+      '<span class="xm ' + (c === '.' ? 'd' : 'h') + '"></span>').join('');
+    const cur = nodeAt(path);
+    extra = '<div class="deep"><b>' + ((head && head._) || '') + '</b> から さらに ' + rest +
+            ' → <b>' + ((cur && cur._) || '‥') + '</b>' +
+            '<span class="dn">数字と記号は5段目より下にあります</span></div>';
+  }
+  $('tree').innerHTML = s + extra;
+}
+// 深さdのi番目のノードが表す符号（左=点、右=線）
+function codeOf(d, i){
+  let s = '';
+  for (let k = d - 1; k >= 0; k--) s += ((i >> k) & 1) ? '-' : '.';
+  return s;
+}
+
+/* ===== 音 =====
+   国際モールスの決まりに合わせる。短点=1単位、長点=3単位、
+   符号内の間=1単位、文字間=3単位、語間=7単位。
+   ここでは1単位=70msにしている（毎分およそ17語のゆっくりめ）。 */
+const UNIT = 70, FREQ = 660;
+let AC = null;
+function ac(){ if (!AC) { const C = window.AudioContext || window.webkitAudioContext; if (C) AC = new C(); } return AC; }
+function beep(units, at){
+  const c = ac(); if (!c) return;
+  const t = at == null ? c.currentTime : at;
+  const dur = units * UNIT / 1000;
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = 'sine'; o.frequency.value = FREQ;
+  // 立ち上がり・立ち下がりを少しなまらせる（そうしないと「プツッ」と鳴る）
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.22, t + 0.008);
+  g.gain.setValueAtTime(0.22, t + dur - 0.008);
+  g.gain.linearRampToValueAtTime(0, t + dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(t); o.stop(t + dur + 0.01);
+}
+function soundOn(){ return $('sound').checked; }
+
+/* 押している間ずっと鳴らす（電鍵と同じ）。離した時点で止める。 */
+let holdOsc = null, holdGain = null;
+function toneStart(){
+  if (!soundOn()) return;
+  const c = ac(); if (!c) return;
+  if (c.state === 'suspended') c.resume();
+  toneStop();
+  holdOsc = c.createOscillator(); holdGain = c.createGain();
+  holdOsc.type = 'sine'; holdOsc.frequency.value = FREQ;
+  holdGain.gain.setValueAtTime(0, c.currentTime);
+  holdGain.gain.linearRampToValueAtTime(0.22, c.currentTime + 0.008);
+  holdOsc.connect(holdGain); holdGain.connect(c.destination);
+  holdOsc.start();
+}
+function toneStop(){
+  if (!holdOsc) return;
+  const c = ac(), o = holdOsc, g = holdGain;
+  holdOsc = holdGain = null;
+  try {
+    g.gain.cancelScheduledValues(c.currentTime);
+    g.gain.setValueAtTime(g.gain.value, c.currentTime);
+    g.gain.linearRampToValueAtTime(0, c.currentTime + 0.012);
+    o.stop(c.currentTime + 0.02);
+  } catch (e) {}
+}
+function playSign(c){ if (soundOn()) beep(c === '.' ? 1 : 3); }
+
+let playing = false;
+function playText(s){
+  if (!soundOn()) return;
+  const c = ac(); if (!c || !s) return;
+  if (c.state === 'suspended') c.resume();
+  let t = c.currentTime + 0.05;
+  for (const ch of s.toUpperCase()) {
+    if (ch === ' ') { t += 7 * UNIT / 1000; continue; }
+    const code = MORSE[ch]; if (!code) continue;
+    for (const k of code) {
+      beep(k === '.' ? 1 : 3, t);
+      t += (k === '.' ? 1 : 3) * UNIT / 1000 + UNIT / 1000;   // 符号内の間=1単位
+    }
+    t += 2 * UNIT / 1000;                                      // 直前の1単位と合わせて文字間=3単位
+  }
+  playing = true;
+  const btn = $('btnPlay'); btn.textContent = '再生中…';
+  setTimeout(() => { playing = false; btn.textContent = '音で聞く'; }, (t - c.currentTime) * 1000 + 120);
+}
+
+/* ===== 逆引き ===== */
+function renderRev(){
+  const v = $('revIn').value.toUpperCase();
+  const box = $('revOut');
+  if (!v.trim()) { box.innerHTML = '<span class="ph">入力すると、下にモールスが出ます</span>'; return; }
+  box.innerHTML = [...v].map(ch => {
+    if (ch === ' ') return '<span class="w">/<i>空白</i></span>';
+    const code = MORSE[ch];
+    return '<span class="w">' + (code ? code.replace(/\./g, '・').replace(/-/g, '－') : '?') + '<i>' + ch + '</i></span>';
+  }).join('');
+}
+
+/* ===== 一覧 ===== */
+const SETS = {
+  alpha: [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'],
+  num:   [...'0123456789'],
+  sym:   Object.keys(MORSE).filter(k => !/[A-Z0-9]/.test(k))
+};
+function renderGrid(set){
+  $('grid').innerHTML = SETS[set].map(ch =>
+    '<div class="cell"><b>' + (ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch) + '</b><span>' +
+    MORSE[ch].replace(/\./g, '・').replace(/-/g, '－') + '</span></div>').join('');
+}
+
+/* ===== 電鍵 =====
+   実物の電鍵は「押した長さ」で短点と長点を打ち分ける。
+   国際モールスでは長点=短点の3倍なので、境目は2単位に置く。 */
+const DASH_MS = UNIT * 2;      // これ以上押したら線
+let keyDownAt = 0, keyRaf = null;
+
+function keyDown(ev){
+  if (ev) ev.preventDefault();
+  if (keyDownAt) return;                     // 二重発火（touch＋mouse）を防ぐ
+  keyDownAt = performance.now();
+  $('keyBtn').classList.add('down','used');
+  stopAuto();
+  toneStart();
+  const live = $('live');
+  preview = '.'; drawTree();
+  (function tick(){
+    if (!keyDownAt) return;
+    const isDash = (performance.now() - keyDownAt) >= DASH_MS;
+    const want = isDash ? '-' : '.';
+    if (want !== preview) { preview = want; drawTree(); }   // 変わった時だけ描き直す
+    const dest = nodeAt(path + want);
+    live.textContent = isDash
+      ? '離すと 線（■）' + (dest && dest._ ? ' → ' + dest._ : '')
+      : 'このまま離すと 点（●）' + (dest && dest._ ? ' → ' + dest._ : '');
+    keyRaf = requestAnimationFrame(tick);
+  })();
+}
+function keyUp(ev){
+  if (ev) ev.preventDefault();
+  if (!keyDownAt) return;
+  const held = performance.now() - keyDownAt;
+  keyDownAt = 0;
+  cancelAnimationFrame(keyRaf);
+  $('keyBtn').classList.remove('down');
+  toneStop();
+  preview = null;
+  $('live').textContent = '押している長さで決まります';
+  const c = held >= DASH_MS ? '-' : '.';
+  if (nodeAt(path + c)) { path += c; render(); startAuto(); }
+  else { // 行き止まり。打ったこと自体は伝える
+    drawTree();
+    $('live').textContent = 'その先に文字はありません';
+  }
+}
+(function wireKey(){
+  const k = $('keyBtn');
+  k.addEventListener('pointerdown', keyDown);
+  k.addEventListener('pointerup', keyUp);
+  k.addEventListener('pointercancel', keyUp);
+  k.addEventListener('pointerleave', (e) => { if (keyDownAt) keyUp(e); });
+  k.addEventListener('contextmenu', (e) => e.preventDefault());
+})();
+
+/* ===== 配線 ===== */
+$('btnBack').onclick  = () => { stopAuto(); path = path.slice(0, -1); render(); startAuto(); };
+$('btnClear').onclick = () => { stopAuto(); path = ''; render(); };
+$('btnFix').onclick   = fix;
+$('btnSpace').onclick = () => { text += ' '; render(); };
+$('btnDel').onclick   = () => { text = text.slice(0, -1); render(); };
+$('btnCopy').onclick  = async () => {
+  if (!text) return;
+  try { await navigator.clipboard.writeText(text); $('btnCopy').textContent = 'コピーしました'; }
+  catch (e) { $('btnCopy').textContent = 'コピーできません'; }
+  setTimeout(() => { $('btnCopy').textContent = 'コピー'; }, 1600);
+};
+$('autoFix').addEventListener('change', () => { $('autoFix').checked ? startAuto() : stopAuto(); });
+$('btnPlay').onclick = () => {
+  if (playing) return;
+  // 音をオフにしたまま押されると無反応に見えるので、その場でオンにする
+  if (!$('sound').checked) { $('sound').checked = true; }
+  playText(text);
+};
+$('revIn').addEventListener('input', renderRev);
+document.querySelectorAll('.tabs button').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.tabs button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); renderGrid(b.dataset.set);
+  };
+});
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === '.' || e.key === '・') { push('.'); e.preventDefault(); }
+  else if (e.key === '-' || e.key === '_') { push('-'); e.preventDefault(); }
+  else if (e.key === 'Enter') { fix(); e.preventDefault(); }
+  else if (e.key === 'Backspace') { stopAuto(); path ? (path = path.slice(0, -1)) : (text = text.slice(0, -1)); render(); e.preventDefault(); }
+  else if (e.key === ' ') { text += ' '; render(); e.preventDefault(); }
+});
+
+renderGrid('alpha');
+render();
+
+// 広告は画面に近づいてから読み込む（規約準拠の遅延読込）
+(function mountAd(){
+  const slot = document.getElementById('ad-after-out');
+  if (!slot) return;
+  let done = false;
+  const load = () => { if (done) return; done = true;
+    try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {} };
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((es) => {
+      es.forEach(e => { if (e.isIntersecting) { load(); io.disconnect(); } });
+    }, { rootMargin: '300px 0px' });
+    io.observe(slot);
+  } else { load(); }
+})();
+
+</script>
+
+<!-- WEBNINJA_UNIFIED_FOOTER -->
+<footer style="text-align:center;padding:2rem 1rem 2.5rem;font-size:0.78rem;color:#94a3b8;line-height:2;border-top:1px solid #f0e6d2;margin-top:2.5rem;background:#fffcf7;">
+  <div style="font-weight:800;color:#8b6b3d;font-size:0.85rem;margin-bottom:0.4rem;">web忍者の砦</div>
+  <div>
+    <a href="https://kkpwebninja.com/" target="_blank" rel="noopener" style="color:#8b6b3d;text-decoration:none;margin:0 0.5rem;">本丸トップ</a>·
+    <a href="https://privacypolicy.kkpwebninja.com/" target="_blank" rel="noopener" style="color:#8b6b3d;text-decoration:none;margin:0 0.5rem;">プライバシーポリシー</a>·
+    <a href="https://kkpwebninja.com/otoiawase" target="_blank" rel="noopener" style="color:#8b6b3d;text-decoration:none;margin:0 0.5rem;">お問い合わせ</a>·
+    <a href="https://x.com/kkp_webninja" target="_blank" rel="noopener" style="color:#8b6b3d;text-decoration:none;margin:0 0.5rem;">@kkp_webninja</a>
+  </div>
+  <div style="margin-top:0.5rem;color:#bfa97a;">© 2025-2026 web忍者の砦</div>
+</footer>
+</body>
+</html>
