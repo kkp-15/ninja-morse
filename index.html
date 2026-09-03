@@ -119,7 +119,8 @@ h2{font-size:16px;margin:0 0 10px;font-weight:800}
 .kg i{font-style:normal;font-size:10.5px;font-weight:600;opacity:.75}
 .kg .s{display:block;background:var(--dot);border-radius:99px;height:9px;width:9px;margin-bottom:1px}
 .kg.h .s{background:var(--dash);width:20px;border-radius:3px}
-.kstat{font-size:12.5px;font-weight:700;letter-spacing:.02em;opacity:.9;min-height:18px}
+.kerr{font-size:11px;font-weight:700;opacity:.62;letter-spacing:.01em}
+  .kstat{font-size:12.5px;font-weight:700;letter-spacing:.02em;opacity:.9;min-height:18px}
 .keybtn.down .kstat{opacity:1}
 .keybtn.down .kg{background:rgba(255,255,255,.06)}
 .pad{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
@@ -251,6 +252,7 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
           <span class="kg d"><span class="s"></span>短く＝トン</span>
           <span class="kg h"><span class="s"></span>長く＝ツー</span>
         </span>
+        <span class="kerr">打ち間違えたら 短く8回＝訂正</span>
         <span class="knob"></span>
         <span class="kstat" id="live">ここを押してください</span>
       </button>
@@ -404,6 +406,12 @@ function render(){
    その感覚に合わせ、入力が止まったら自動で確定する。
    いきなり確定すると驚くので、残り時間をバーで見せる。 */
 const AUTO_MS = 1000;
+/* 文字にならない打ち方をした時に、打ち直しへ戻すまでの時間 */
+const RESET_MS = 1400;
+/* 本物の電鍵でも打ち間違いは起きる。国際モールス（ITU-R M.1677）では
+   短点を8つ続けて送ると「訂正」の合図になり、受け手は直前のことばを捨てる。
+   このアプリでも同じ作法にしている。 */
+const ERR_SIGN = '........';
 let autoTimer = null, autoRaf = null;
 
 function stopAuto(){
@@ -413,17 +421,30 @@ function stopAuto(){
 }
 function startAuto(){
   stopAuto();
-  if (!$('autoFix').checked) return;
+  if (!path) return;
   const n = nodeAt(path);
-  if (!path || !(n && n._)) return;          // 文字が確定していない位置では動かさない
-  const bar = $('bar'); bar.classList.remove('off');
-  const t0 = performance.now();
-  (function tick(){
-    const p = Math.min(1, (performance.now() - t0) / AUTO_MS);
-    bar.firstElementChild.style.width = (p * 100).toFixed(1) + '%';
-    if (p < 1) autoRaf = requestAnimationFrame(tick);
-  })();
-  autoTimer = setTimeout(() => { stopAuto(); fix(); }, AUTO_MS);
+
+  // 文字が決まっている位置：残り時間をバーで見せて自動確定する
+  if (n && n._) {
+    if (!$('autoFix').checked) return;
+    const bar = $('bar'); bar.classList.remove('off');
+    const t0 = performance.now();
+    (function tick(){
+      const p = Math.min(1, (performance.now() - t0) / AUTO_MS);
+      bar.firstElementChild.style.width = (p * 100).toFixed(1) + '%';
+      if (p < 1) autoRaf = requestAnimationFrame(tick);
+    })();
+    autoTimer = setTimeout(() => { stopAuto(); fix(); }, AUTO_MS);
+    return;
+  }
+
+  // 文字が決まらない位置（打ちすぎ・訂正符号の途中）。
+  // ここで何もしないと自動確定が止まったまま復帰せず、以後どれだけ打っても
+  // 反応がなくなる（連打すると固まって見える原因だった）。少し待って打ち直しに戻す。
+  autoTimer = setTimeout(() => {
+    stopAuto(); path = ''; render();
+    $('live').textContent = 'その組み合わせに文字はありません。打ち直してください';
+  }, RESET_MS);
 }
 
 function push(c){ if (nodeAt(path + c)) { const a = ac(); if (a && a.state === 'suspended') a.resume(); playSign(c); path += c; render(); startAuto(); } }
@@ -672,11 +693,31 @@ function keyUp(ev){
   preview = null;
   $('live').textContent = '押している長さで決まります';
   const c = held >= DASH_MS ? '-' : '.';
-  if (nodeAt(path + c)) { path += c; render(); startAuto(); }
-  else { // 行き止まり。打ったこと自体は伝える
-    drawTree();
-    $('live').textContent = 'その先に文字はありません';
+  const next = path + c;
+
+  // 短点8つ＝訂正。直前のことばを消して、そこから打ち直す。
+  if (next === ERR_SIGN) {
+    stopAuto();
+    const had = /\S/.test(text);
+    text = text.replace(/\S+\s*$/, '');
+    path = ''; render();
+    $('live').textContent = had ? '訂正：直前のことばを消しました' : '訂正：消すことばがありません';
+    return;
   }
+
+  if (nodeAt(next)) { path = next; render(); startAuto(); return; }
+
+  // 文字は無いが訂正符号の途中。あと何打で訂正になるかを見せる。
+  if (ERR_SIGN.startsWith(next)) {
+    path = next; render(); startAuto();
+    $('live').textContent = 'あと' + (ERR_SIGN.length - next.length) + '打で訂正（直前のことばを消す）';
+    return;
+  }
+
+  // 行き止まり。打ったこと自体は伝えつつ、復帰タイマーは必ず動かす。
+  drawTree();
+  $('live').textContent = 'その先に文字はありません';
+  startAuto();
 }
 (function wireKey(){
   const k = $('keyBtn');
