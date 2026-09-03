@@ -486,7 +486,21 @@ function render(){
 /* 本物のモールスは「間」で文字が切れる（文字間は3単位）。
    その感覚に合わせ、入力が止まったら自動で確定する。
    いきなり確定すると驚くので、残り時間をバーで見せる。 */
-const AUTO_MS = 1000;
+/* 確定までの待ちは打つ人の速さに合わせる。
+   本物のモールスは絶対の秒数を決めておらず、短点1に対して文字間3、という
+   比だけが決まっている（無線局運用規則 別表第一号）。だから受け手は相手の
+   速さを掴んでから区切る。ここでも同じで、符号内の間（離してから次に押すまで）を
+   見て、その3倍を文字の切れ目とみなす。
+   1000ms固定だったころは規則の約4.8倍あり、SOSを打つと全体の3分の2が
+   待ち時間だった。 */
+const AUTO_MIN = 380, AUTO_MAX = 1000, AUTO_DEFAULT = 560;
+let gapLog = [];          // 直近の「符号内の間」
+function autoMs(){
+  if (gapLog.length < 2) return AUTO_DEFAULT;
+  const a = gapLog.slice().sort((x, y) => x - y);
+  const unit = a[Math.floor(a.length / 2)];               // 中央値。1回の乱れに引きずられない
+  return Math.min(AUTO_MAX, Math.max(AUTO_MIN, Math.round(unit * 3)));
+}
 /* 文字にならない打ち方をした時に、打ち直しへ戻すまでの時間 */
 const RESET_MS = 1400;
 /* 本物の電鍵でも打ち間違いは起きる。国際モールス（ITU-R M.1677）では
@@ -509,13 +523,14 @@ function startAuto(){
   if (n && n._) {
     if (!$('autoFix').checked) return;
     const bar = $('bar'); bar.classList.remove('off');
+    const wait = autoMs();
     const t0 = performance.now();
     (function tick(){
-      const p = Math.min(1, (performance.now() - t0) / AUTO_MS);
+      const p = Math.min(1, (performance.now() - t0) / wait);
       bar.firstElementChild.style.width = (p * 100).toFixed(1) + '%';
       if (p < 1) autoRaf = requestAnimationFrame(tick);
     })();
-    autoTimer = setTimeout(() => { stopAuto(); fix(); }, AUTO_MS);
+    autoTimer = setTimeout(() => { stopAuto(); fix(); }, wait);
     return;
   }
 
@@ -529,7 +544,7 @@ function startAuto(){
 }
 
 function push(c){ if (nodeAt(path + c)) { const a = ac(); if (a && a.state === 'suspended') a.resume(); playSign(c); path += c; render(); startAuto(); } }
-function fix(){ stopAuto(); const n = nodeAt(path); if (n && n._) { text += n._; path = ''; render(); } }
+function fix(){ stopAuto(); const n = nodeAt(path); if (n && n._) { text += n._; path = ''; lastUpAt = 0; render(); } }
 
 /* ===== 木の描画 ===== */
 const DEPTH = 4;                      // 4段でA〜Zがちょうど収まる
@@ -742,10 +757,17 @@ function renderGrid(set){
 const DASH_MS = UNIT * 2;      // これ以上押したら線
 let keyDownAt = 0, keyRaf = null;
 
+let lastUpAt = 0;
 function keyDown(ev){
   if (ev) ev.preventDefault();
   if (keyDownAt) return;                     // 二重発火（touch＋mouse）を防ぐ
   keyDownAt = performance.now();
+  // 同じ文字を打っている途中の間だけ数える。文字が変わったあとの間は
+  // 「考えていた時間」なので混ぜない。
+  if (path && lastUpAt) {
+    const g = keyDownAt - lastUpAt;
+    if (g >= 40 && g <= 700) { gapLog.push(g); if (gapLog.length > 9) gapLog.shift(); }
+  }
   $('keyBtn').classList.add('down','used');
   stopAuto();
   toneStart();
@@ -767,6 +789,7 @@ function keyUp(ev){
   if (ev) ev.preventDefault();
   if (!keyDownAt) return;
   const held = performance.now() - keyDownAt;
+  lastUpAt = performance.now();
   keyDownAt = 0;
   cancelAnimationFrame(keyRaf);
   $('keyBtn').classList.remove('down');
