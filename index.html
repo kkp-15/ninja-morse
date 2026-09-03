@@ -216,6 +216,40 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
   /* 経路図と電鍵を1画面に収めるための詰め。数字・記号（深さ5以上）でも入るようにする */
   header{padding:11px 16px}
   main{padding:10px 12px 40px}
+  /* ===== 電鍵の台座 =====
+     スマホでは画面の下に固定する。親指が届く位置に置くと同時に、
+     打っている間も分岐図が見えたままになるのが狙い。 */
+  .keydock{margin-bottom:14px}
+  @media(max-width:700px){
+    .keydock{position:fixed;left:0;right:0;bottom:0;z-index:60;margin:0;
+      background:var(--paper);border-top:1px solid var(--line);
+      padding:8px 12px calc(8px + env(safe-area-inset-bottom));
+      box-shadow:0 -6px 18px rgba(74,59,40,.13)}
+    .keydock .keybtn{margin:0 auto}
+    .keydock .auto{margin-top:6px}
+    /* 台座の高さぶんだけ下に余白を作る（広告や本文が隠れないように）。
+       高さはJSで実測して --dock に入れている。 */
+    body{padding-bottom:var(--dock,200px)}
+  }
+  /* ===== 知識のセクション ===== */
+  .know h3{font-size:15px;margin:18px 0 6px}
+  .know h3:first-of-type{margin-top:4px}
+  .know p{margin:0 0 8px;line-height:1.75;font-size:13.5px}
+  .know .lead{color:var(--ink-soft)}
+  .unit{width:100%;border-collapse:collapse;font-size:13px;margin:2px 0 10px}
+  .unit th,.unit td{border:1px solid var(--line);padding:6px 8px;text-align:left}
+  .unit th{background:var(--cream);font-weight:800;white-space:nowrap}
+  .unit td:last-child{text-align:right;white-space:nowrap;font-weight:800}
+  .unit .ba{display:inline-block;height:9px;border-radius:99px;vertical-align:middle;margin-right:6px}
+  .defs{margin:0 0 10px;padding:0;list-style:none;font-size:13.5px;line-height:1.7}
+  .defs li{padding:7px 0;border-top:1px dashed var(--line)}
+  .defs li:first-child{border-top:0}
+  .defs b{display:inline-block;min-width:5.4em}
+  .defs code{background:var(--cream);border-radius:5px;padding:1px 6px;letter-spacing:.12em;font-size:13px}
+  .know .src{font-size:11.5px;color:var(--ink-soft);margin:10px 0 0;line-height:1.65}
+  .more{display:block;margin-top:12px;padding:12px 14px;border-radius:12px;text-decoration:none;
+    background:linear-gradient(180deg,var(--orange),var(--orange-deep));color:#fff;font-weight:800;
+    text-align:center;font-size:14px}
   .card{padding:11px}
   .now{padding:9px}
   .res{font-size:44px;min-height:50px}
@@ -242,10 +276,8 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
 <main>
   <section class="card">
     <div class="treewrap"><div class="tree" id="tree"></div></div>
+    <div class="keydock" id="keydock">
     <div class="bar off" id="bar"><i></i></div>
-
-
-
     <div class="key">
       <button class="keybtn" id="keyBtn" type="button" aria-label="電鍵。短く押すと点、長く押すと線">
         <span class="kguide">
@@ -260,6 +292,7 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
         <label><input type="checkbox" id="autoFix" checked>止めたら自動確定</label>
         <label><input type="checkbox" id="sound" checked>音を鳴らす</label>
       </div>
+    </div>
     </div>
     <div class="sub">
       <button type="button" id="btnBack">1つ戻す</button>
@@ -308,6 +341,54 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
     </div>
     <div class="grid" id="grid"></div>
     <p class="note">国際モールス符号（ITU-R M.1677-1）に基づいています。</p>
+  </section>
+
+  <section class="card know">
+    <h2>モールス信号の決まりごと</h2>
+    <p class="lead">符号を覚えたあとに効いてくる話をまとめました。国際的な取り決めと、日本の無線局運用規則にもとづいています。</p>
+
+    <h3>長さは「短点いくつ分」ですべて決まる</h3>
+    <p>モールスに絶対の秒数はありません。短点1つを1単位として、そこからの比だけが決まっています。だから速い人も遅い人も、比さえ守れば通じます。</p>
+    <table class="unit">
+      <tr><th>短点（トン）</th><td><span class="ba" style="width:14px;background:var(--dot)"></span>1単位</td></tr>
+      <tr><th>長点（ツー）</th><td><span class="ba" style="width:42px;background:var(--dash)"></span>3単位</td></tr>
+      <tr><th>符号の中の間</th><td>1単位</td></tr>
+      <tr><th>文字と文字の間</th><td>3単位</td></tr>
+      <tr><th>語と語の間</th><td>7単位</td></tr>
+    </table>
+    <p>受け手は音の長さと<b>間の長さ</b>だけを頼りに区切ります。文字の切れ目を教える合図はありません。だから間を正確に取ることが、速く打つことよりも大事だと言われます。</p>
+
+    <h3>速さは「1分間に何語」で表す</h3>
+    <p>基準になるのは <b>PARIS</b> という語です。語の後ろの空きまで入れるとちょうど50単位になるので、これを物差しに使います。1分間にPARISを20回送れる速さが20語/分（20&nbsp;WPM）で、このとき1単位は60ミリ秒です。</p>
+    <p>この分岐表では1単位を70ミリ秒（およそ17語/分）にしています。短く押すか長く押すかの境目は、ちょうどその中間の2単位です。</p>
+
+    <h3>打ち間違えたときは、短点を8つ</h3>
+    <p>短点を8つ続けて送ると「いまのは間違い」という合図になります。訂正符号（HH）と呼ばれるもので、受け手は<b>直前のことばを丸ごと捨てて</b>、打ち直しを待ちます。文字1つだけを直すのではなく、ことば単位でやり直すのが作法です。このページの電鍵も同じように動きます。</p>
+
+    <h3>覚え方には定石がある</h3>
+    <ul class="defs">
+      <li><b>コッホ法</b>いきなり目標の速さで、ただし2文字だけから始めます。9割取れるようになったら1文字ずつ足していく方法です。</li>
+      <li><b>ファーンズワース</b>符号そのものは速いまま送り、文字と文字の間だけを広げます。「文字20語/分・全体5語/分」のような設定から始めます。</li>
+    </ul>
+    <p>どちらも<b>ゆっくり打って覚えない</b>ための工夫です。遅い符号で覚えると、音の形ではなく点と線を数えるくせがつき、速くしたときに聞き取れなくなります。</p>
+
+    <h3>知っておくと通じる合図</h3>
+    <ul class="defs">
+      <li><b>SOS</b><code>・・・－－－・・・</code>区切らず一続きに送ります。3文字ではなくこれで1つの合図です。</li>
+      <li><b>CQ</b><code>－・－・　－－・－</code>「誰でもいいので応答してほしい」という呼びかけ。</li>
+      <li><b>AR</b><code>・－・－・</code>通信の終わり。<b>AS</b><code>・－・・・</code>少し待ってほしい。</li>
+      <li><b>?</b><code>・・－－・・</code>もう一度送ってほしいとき。</li>
+    </ul>
+
+    <h3>日本語を送る「和文モールス」もある</h3>
+    <p>カタカナを送るための符号が別に決められています。イロハ順に欧文の符号を当てはめて作られたもので、無線局運用規則にも定めがあります。ただし文字の出やすさを考えずに割り当てたので、よく使う文字に短い符号が来ておらず、効率は欧文に劣ります。<b>ヘ</b>が<code>・</code>、<b>ム</b>が<code>－</code>です。</p>
+
+    <h3>いまの日本での位置づけ</h3>
+    <p>アマチュア無線の国家試験からは、モールスの実技試験が第三級で2005年、第一級・第二級で2011年10月になくなりました。ただし試験がなくなっただけで、モールス符号を理解しているかは筆記で今も問われますし、電波の届きにくい条件でも通じる手段としてCW（モールス通信）は現役です。</p>
+
+    <a class="more" href="/hajimekata/">読み物：モールス信号のはじめ方 →</a>
+
+    <p class="src">出典：国際電気通信連合 ITU-R M.1677-1「International Morse code」／総務省 無線局運用規則 別表第一号（第十二条関係）／総務省報道資料「アマチュア無線技士国家試験に係る試験科目の見直し」</p>
   </section>
 </main>
 
@@ -719,6 +800,20 @@ function keyUp(ev){
   $('live').textContent = 'その先に文字はありません';
   startAuto();
 }
+/* 台座の高さは文言や折り返しで変わるので、実測して本文の下余白に渡す。
+   決め打ちにすると機種によって広告や本文が隠れる。 */
+(function dockPad(){
+  const dock = $('keydock');
+  const apply = () => {
+    const fixed = getComputedStyle(dock).position === 'fixed';
+    document.documentElement.style.setProperty('--dock', fixed ? (dock.offsetHeight + 28) + 'px' : '0px');
+  };
+  apply();
+  if (window.ResizeObserver) new ResizeObserver(apply).observe(dock);
+  addEventListener('resize', apply);
+  addEventListener('orientationchange', () => setTimeout(apply, 200));
+})();
+
 (function wireKey(){
   const k = $('keyBtn');
   k.addEventListener('pointerdown', keyDown);
