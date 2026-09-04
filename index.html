@@ -231,6 +231,30 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
        高さはJSで実測して --dock に入れている。 */
     body{padding-bottom:var(--dock,200px)}
   }
+  /* ===== 送りあうカード ===== */
+  .mtabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+  .mtabs button{border:1px solid var(--line);background:#fff;color:var(--ink-soft);font:inherit;
+    font-weight:800;font-size:13.5px;border-radius:10px;padding:8px 6px;cursor:pointer}
+  .mtabs button[aria-pressed="true"]{background:var(--cream);border-color:var(--orange);color:var(--ink)}
+  .decout{min-height:44px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+    background:var(--cream);font-size:19px;font-weight:800;letter-spacing:.06em;line-height:1.6;word-break:break-word}
+  .decout .ph{font-size:13px;font-weight:400;color:var(--ink-soft);letter-spacing:0}
+  .decout .bad{color:#B4451A;font-size:13px;font-weight:700;letter-spacing:0}
+  .mact{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+  .mact button{flex:1 1 auto;border:1px solid var(--line);background:#fff;color:var(--ink);font:inherit;
+    font-weight:800;font-size:13.5px;border-radius:10px;padding:9px 10px;cursor:pointer;min-width:8em}
+  .mact button:disabled{opacity:.45;cursor:not-allowed}
+  .mnote{font-size:11.5px;color:var(--ink-soft);margin:9px 0 0;line-height:1.7}
+  .shr{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+  .shr a,.shr button{display:block;text-align:center;text-decoration:none;font:inherit;font-weight:800;
+    font-size:13.5px;border-radius:10px;padding:10px 8px;cursor:pointer;border:1px solid transparent}
+  #shX{background:#000;color:#fff}
+  #shL{background:#06C755;color:#fff}
+  #shC{grid-column:1 / -1;background:#fff;color:var(--ink);border-color:var(--line)}
+  .inbox{background:linear-gradient(180deg,var(--orange),var(--orange-deep));color:#fff;
+    border-radius:12px;padding:11px 13px;margin-bottom:11px}
+  .inbox b{display:block;font-size:14px;font-weight:900;margin-bottom:3px}
+  .inbox span{font-size:12px;opacity:.95;line-height:1.65}
   /* ===== 知識のセクション ===== */
   .know h3{font-size:15px;margin:18px 0 6px}
   .know h3:first-of-type{margin-top:4px}
@@ -324,12 +348,36 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
   </section>
 
 
-  <section class="card">
-    <h2>逆に引く（文字 → モールス）</h2>
-    <div class="rev">
-      <input id="revIn" type="text" placeholder="例: SOS / ARIGATO" autocomplete="off">
+  <section class="card msg" id="msg">
+    <h2>モールスで送りあう</h2>
+    <div class="mtabs" id="mtabs">
+      <button type="button" data-m="w" aria-pressed="true">文字から作る</button>
+      <button type="button" data-m="r" aria-pressed="false">届いた信号を読む</button>
     </div>
-    <div class="revout" id="revOut"><span class="ph">入力すると、下にモールスが出ます</span></div>
+
+    <div id="paneW">
+      <div class="rev"><input id="revIn" type="text" placeholder="例: SOS / ARIGATO" autocomplete="off" maxlength="60"></div>
+      <div class="revout" id="revOut"><span class="ph">入力すると、下にモールスが出ます</span></div>
+      <div class="mact">
+        <button type="button" id="wPlay">音で聞く</button>
+        <button type="button" id="wCopy">符号をコピー</button>
+      </div>
+      <p class="mnote" id="wNote">相手に送ると、受け取った人はこのページで音を聞いて読めます。</p>
+      <div class="shr" id="wShare" hidden>
+        <a id="shX" href="#" target="_blank" rel="noopener">Xで送る</a>
+        <a id="shL" href="#" target="_blank" rel="noopener">LINEで送る</a>
+        <button type="button" id="shC">リンクをコピー</button>
+      </div>
+    </div>
+
+    <div id="paneR" hidden>
+      <div class="rev"><input id="decIn" type="text" placeholder="・－・ でも .-. でも貼れます" autocomplete="off"></div>
+      <div class="decout" id="decOut"><span class="ph">受け取った符号を貼ると、ここに文が出ます</span></div>
+      <div class="mact">
+        <button type="button" id="dPlay">音で聞く</button>
+        <button type="button" id="dBack">この文に返事を作る</button>
+      </div>
+    </div>
   </section>
 
   <section class="card">
@@ -727,17 +775,113 @@ function playText(s){
   setTimeout(() => { playing = false; btn.textContent = '音で聞く'; }, (t - c.currentTime) * 1000 + 120);
 }
 
-/* ===== 逆引き ===== */
+/* ===== モールスで送りあう =====
+   受け取った人が「読みたい」と思ったとき、その場で読めて、そのまま返事まで
+   作れるようにする。共有URLには符号だけを載せる（答えは載せない）ので、
+   リンクを開いた人は音を聞いて自分で読むこともできる。
+   ・ = . / － = - / 文字の切れ目 = _ / 語の切れ目 = __ （どれもURLで壊れない字） */
+const SITE = 'https://morse.kkpwebninja.com/';
+function toMorse(text){
+  return [...text.toUpperCase()].map(ch => ch === ' ' ? '' : (MORSE[ch] || null))
+    .filter(x => x !== null).length ? text.toUpperCase().split('').reduce((a, ch) => {
+      if (ch === ' ') { a.push(''); return a; }
+      const c = MORSE[ch]; if (c) a.push(c); return a;
+    }, []).join('_').replace(/_{2,}/g, '__') : '';
+}
+function fromMorse(code){
+  // 全角の点・線、スラッシュ、空白、どれで来ても読めるようにする
+  const norm = code.replace(/[・･·•]/g, '.').replace(/[－ー―‐−–—]/g, '-')
+                   .replace(/[／]/g, '/').replace(/[　]/g, ' ').trim();
+  if (!norm) return {text:'', bad:0};
+  const words = norm.split(/\s*(?:\/|__|\s{2,})\s*/);
+  let bad = 0;
+  const out = words.map(w => w.split(/[\s_]+/).filter(Boolean).map(sym => {
+    const hit = Object.keys(MORSE).find(k => MORSE[k] === sym);
+    if (!hit) { bad++; return '?'; }
+    return hit;
+  }).join('')).filter(Boolean).join(' ');
+  return {text: out, bad};
+}
+function shareUrl(m){ return SITE + '?m=' + m; }
+
+let lastMorse = '';
 function renderRev(){
   const v = $('revIn').value.toUpperCase();
   const box = $('revOut');
-  if (!v.trim()) { box.innerHTML = '<span class="ph">入力すると、下にモールスが出ます</span>'; return; }
+  if (!v.trim()) {
+    box.innerHTML = '<span class="ph">入力すると、下にモールスが出ます</span>';
+    lastMorse = ''; $('wShare').hidden = true; return;
+  }
   box.innerHTML = [...v].map(ch => {
     if (ch === ' ') return '<span class="w">/<i>空白</i></span>';
     const code = MORSE[ch];
     return '<span class="w">' + (code ? code.replace(/\./g, '・').replace(/-/g, '－') : '?') + '<i>' + ch + '</i></span>';
   }).join('');
+  lastMorse = toMorse(v);
+  const ok = !!lastMorse;
+  $('wShare').hidden = !ok;
+  if (!ok) return;
+  const symbols = lastMorse.replace(/__/g, ' / ').replace(/_/g, ' ').replace(/\./g, '・').replace(/-/g, '－');
+  const txt = symbols + '\n\nこれ、読める？　読めたら返事もモールスで。\n#モールス信号';
+  $('shX').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt)
+                + '&url=' + encodeURIComponent(shareUrl(lastMorse)) + '&via=kkp_webninja';
+  $('shL').href = 'https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(shareUrl(lastMorse))
+                + '&text=' + encodeURIComponent(symbols + '\nこれ、読める？');
 }
+
+function renderDec(){
+  const r = fromMorse($('decIn').value);
+  const box = $('decOut');
+  if (!r.text) { box.innerHTML = '<span class="ph">受け取った符号を貼ると、ここに文が出ます</span>'; return; }
+  box.innerHTML = esc(r.text) + (r.bad ? '<div class="bad">「?」は表にない組み合わせです</div>' : '');
+}
+function esc(t){ return t.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function showPane(m){
+  $('paneW').hidden = m !== 'w';
+  $('paneR').hidden = m !== 'r';
+  [...$('mtabs').children].forEach(b => b.setAttribute('aria-pressed', b.dataset.m === m));
+}
+$('mtabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (b) showPane(b.dataset.m);
+});
+$('decIn').addEventListener('input', renderDec);
+$('wPlay').onclick = () => { const a = ac(); if (a && a.state === 'suspended') a.resume(); playText($('revIn').value); };
+$('dPlay').onclick = () => {
+  const a = ac(); if (a && a.state === 'suspended') a.resume();
+  playText(fromMorse($('decIn').value).text);
+};
+$('wCopy').onclick = async () => {
+  const t = $('revOut').textContent.trim(); if (!t) return;
+  const sym = lastMorse.replace(/__/g, ' / ').replace(/_/g, ' ').replace(/\./g, '・').replace(/-/g, '－');
+  try { await navigator.clipboard.writeText(sym); $('wCopy').textContent = 'コピーしました'; }
+  catch (e) { $('wCopy').textContent = 'コピーできません'; }
+  setTimeout(() => { $('wCopy').textContent = '符号をコピー'; }, 1600);
+};
+$('shC').onclick = async () => {
+  try { await navigator.clipboard.writeText(shareUrl(lastMorse)); $('shC').textContent = 'コピーしました'; }
+  catch (e) { $('shC').textContent = 'コピーできません'; }
+  setTimeout(() => { $('shC').textContent = 'リンクをコピー'; }, 1600);
+};
+$('dBack').onclick = () => {
+  showPane('w');
+  $('revIn').value = ''; renderRev(); $('revIn').focus();
+  $('msg').scrollIntoView({behavior:'smooth', block:'start'});
+};
+
+/* 共有リンクから来た人。符号を読む側に入れて、音を聞ける状態で迎える。 */
+(function fromLink(){
+  const m = new URLSearchParams(location.search).get('m');
+  if (!m || !/^[.\-_]+$/.test(m)) return;
+  $('decIn').value = m.replace(/__/g, ' / ').replace(/_/g, ' ').replace(/\./g, '・').replace(/-/g, '－');
+  renderDec();
+  showPane('r');
+  const box = document.createElement('div');
+  box.className = 'inbox';
+  box.innerHTML = '<b>モールスが届いています</b><span>下に読んだ結果が出ています。「音で聞く」で本物の信号音も鳴らせます。読めたら、そのまま返事を作って送り返せます。</span>';
+  $('msg').insertBefore(box, $('mtabs'));
+  addEventListener('load', () => $('msg').scrollIntoView({behavior:'smooth', block:'start'}));
+})();
 
 /* ===== 一覧 ===== */
 const SETS = {
