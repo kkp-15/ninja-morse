@@ -529,13 +529,17 @@ function render(){
    見て、その3倍を文字の切れ目とみなす。
    1000ms固定だったころは規則の約4.8倍あり、SOSを打つと全体の3分の2が
    待ち時間だった。 */
-const AUTO_MIN = 380, AUTO_MAX = 1000, AUTO_DEFAULT = 560;
+/* 音で聞くときは規則どおり文字間3単位（210ms）で鳴るのに、自分で打つと
+   560ms待たされていた。同じSOSでも打つほうが1.7倍おそく、耳で覚えた速さと
+   手の速さが噛み合わない。規則の210msまで下げると打ちかけで切れるので、
+   その少し上を下限にする。 */
+const AUTO_MIN = 260, AUTO_MAX = 900, AUTO_DEFAULT = 420;
 let gapLog = [];          // 直近の「符号内の間」
 function autoMs(){
   if (gapLog.length < 2) return AUTO_DEFAULT;
   const a = gapLog.slice().sort((x, y) => x - y);
   const unit = a[Math.floor(a.length / 2)];               // 中央値。1回の乱れに引きずられない
-  return Math.min(AUTO_MAX, Math.max(AUTO_MIN, Math.round(unit * 3)));
+  return Math.min(AUTO_MAX, Math.max(AUTO_MIN, Math.round(unit * 2.6)));
 }
 /* 文字にならない打ち方をした時に、打ち直しへ戻すまでの時間 */
 const RESET_MS = 1400;
