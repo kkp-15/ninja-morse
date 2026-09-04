@@ -16,8 +16,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#F08A3C">
-<title>モールス信号の分岐表｜たどるだけで読める無料デコーダー</title>
-<meta name="description" content="点と線をタップすると分岐をたどって文字が決まる、モールス信号の学習ツール。A〜Zがなぜその形なのかが木で一目で分かります。表引き・逆引き・和文の一覧つき。無料・登録不要。">
+<title>モールス信号を送り合う｜打って送って、届いた符号は読めるページ</title>
+<meta name="description" content="モールス信号でメッセージを送り合える無料サイト。電鍵で打つか文字を入力すると符号ができ、音を確かめてXやLINEで送れます。届いた符号は貼るだけで文に戻り、そのまま返事も作れます。点と線をたどる分岐図つきで、初めてでも仕組みが分かります。登録不要。">
 <link rel="canonical" href="https://morse.kkpwebninja.com/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="この符号、読めますか？｜モールス信号を送りあう">
@@ -34,9 +34,9 @@
 {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "name": "モールス信号の分岐表",
+  "name": "モールス信号を送り合う",
   "url": "https://morse.kkpwebninja.com/",
-  "description": "点と線をたどって文字を読み解く、モールス信号の無料学習ツール。電鍵を模したボタンで打鍵でき、分岐図で仕組みが一目で分かります。",
+  "description": "モールス信号で送り合える無料サイト。打った符号をXやLINEで送れて、届いた符号は貼るだけで読めます。分岐図で仕組みも分かります。",
   "applicationCategory": "GameApplication",
   "operatingSystem": "Web",
   "offers": {"@type":"Offer","price":"0","priceCurrency":"JPY"},
@@ -132,6 +132,7 @@ h2{font-size:16px;margin:0 0 10px;font-weight:800}
   .decout .ph{font-size:13px;font-weight:400;color:var(--ink-soft);letter-spacing:0}
   .decout .bad{color:#B4451A;font-size:12px;font-weight:700;letter-spacing:0;margin-top:5px}
   /* 教材である旨の注意。フッターではなく本文の締めとして置く。 */
+  h2 .h2sub{display:block;font-size:11.5px;font-weight:600;color:var(--ink-soft);margin-top:2px;letter-spacing:0}
   .caution{max-width:820px;margin:0 auto 10px;padding:0 12px;
     font-size:11.5px;color:var(--ink-soft);line-height:1.8;text-align:center}
   /* 打ち方の説明。ボタンの中に置くと押す場所が狭くなるので題の下へ小さく出す。 */
@@ -335,8 +336,8 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
 </head>
 <body>
 <header>
-  <h1>モールス信号の分岐表</h1>
-  <p>点と線をたどるだけで、文字が決まります</p>
+  <h1>モールス信号を送り合う</h1>
+  <p>打って、音を確かめて、そのまま送る。届いた符号は貼れば読めます</p>
   <p class="hrule"><b><i class="d"></i>短く押す</b>＝トン　<b><i class="h"></i>長く押す</b>＝ツー　<b>短く8回</b>＝訂正</p>
 </header>
 
@@ -344,6 +345,7 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
   <div id="inbox"></div>
 
   <section class="card">
+    <h2>打つ・送る<span class="h2sub">分岐図をたどれば、初めてでも打てます</span></h2>
     <div class="treewrap"><div class="tree" id="tree"></div></div>
     <div class="keydock" id="keydock">
     <div class="bar off" id="bar"><i></i></div>
@@ -380,7 +382,7 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
 
 
   <section class="card" id="read">
-    <h2>届いた符号を読む</h2>
+    <h2>届いた符号を読む<span class="h2sub">貼りつけると文になります。返事もここから作れます</span></h2>
     <div class="mkind" id="dKind">
       <button type="button" data-w="0" aria-pressed="true">欧文（英数字）</button>
       <button type="button" data-w="1" aria-pressed="false">和文（カタカナ）</button>
