@@ -112,17 +112,31 @@ h2{font-size:16px;margin:0 0 10px;font-weight:800}
 @keyframes knobPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 @keyframes knobRing{0%{transform:scale(.85);opacity:.9}70%{transform:scale(1.25);opacity:0}100%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.keybtn .knob{animation:none}.keybtn .knob::after{display:none}}
-/* 電鍵の中に説明をまとめる。周りに文字を置かないための作り */
-.kguide{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
-.kg{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:800;
-  background:rgba(255,255,255,.10);border-radius:10px;padding:6px 4px;line-height:1.35}
-.kg i{font-style:normal;font-size:10.5px;font-weight:600;opacity:.75}
-.kg .s{display:block;background:var(--dot);border-radius:99px;height:9px;width:9px;margin-bottom:1px}
-.kg.h .s{background:var(--dash);width:20px;border-radius:3px}
-.kerr{font-size:11px;font-weight:700;opacity:.62;letter-spacing:.01em}
+    /* 打ち方の説明。ボタンの中に置くと押す場所が狭くなるので題の下へ小さく出す。 */
+  .hrule{margin:6px 0 0;font-size:11.5px;line-height:1.8;opacity:.95}
+  .hrule b{font-weight:800}
+  .hrule i{display:inline-block;vertical-align:middle;margin-right:3px;background:#fff}
+  .hrule i.d{width:7px;height:7px;border-radius:99px}
+  .hrule i.h{width:17px;height:7px;border-radius:3px}
+  /* 押している長さを、つまみを囲む輪の伸びで見せる。文字を読むより速く分かる。
+     2単位で一周し、そこを越えると線の色に変わる。 */
+  .kwrap{position:relative;display:grid;place-items:center;width:76px;height:76px}
+  .ring{position:absolute;inset:0;border-radius:50%;pointer-events:none;
+    background:conic-gradient(var(--rc,#3EB8CE) calc(var(--p,0)*1turn), rgba(255,255,255,.14) 0);
+    -webkit-mask:radial-gradient(circle, transparent 30px, #000 31px);
+    mask:radial-gradient(circle, transparent 30px, #000 31px);
+    opacity:0;transition:opacity .08s}
+  .keybtn.down .ring{opacity:1}
+  /* 音を消すつまみ。常時鳴る作りなので、消す手段がないと電車の中などで困る。 */
+  .key{position:relative}
+  .mute{position:absolute;top:10px;right:14px;width:34px;height:34px;display:grid;place-items:center;cursor:pointer;z-index:3}
+  .mute input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+  .mute span{width:20px;height:20px;display:block;background:no-repeat center/contain;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'><path d='M4 9v6h4l5 4V5L8 9H4z' fill='white'/><path d='M17 8.5a5 5 0 010 7M20 6a9 9 0 010 12'/></svg>");opacity:.85}
+  .mute input:not(:checked) + span{
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'><path d='M4 9v6h4l5 4V5L8 9H4z' fill='white'/><path d='M17 9l5 6M22 9l-5 6'/></svg>");opacity:.5}
   .kstat{font-size:12.5px;font-weight:700;letter-spacing:.02em;opacity:.9;min-height:18px}
 .keybtn.down .kstat{opacity:1}
-.keybtn.down .kg{background:rgba(255,255,255,.06)}
 .pad{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 .pad button{border:0;border-radius:13px;padding:9px 8px;font:inherit;font-weight:800;
   font-size:14px;color:#fff;cursor:pointer;min-height:52px;display:flex;
@@ -301,6 +315,7 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
 <header>
   <h1>モールス信号の分岐表</h1>
   <p>点と線をたどるだけで、文字が決まります</p>
+  <p class="hrule"><b><i class="d"></i>短く押す</b>＝トン　<b><i class="h"></i>長く押す</b>＝ツー　<b>短く8回</b>＝訂正</p>
 </header>
 
 <main>
@@ -310,24 +325,13 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
     <div class="bar off" id="bar"><i></i></div>
     <div class="key">
       <button class="keybtn" id="keyBtn" type="button" aria-label="電鍵。短く押すと点、長く押すと線">
-        <span class="kguide">
-          <span class="kg d"><span class="s"></span>短く＝トン</span>
-          <span class="kg h"><span class="s"></span>長く＝ツー</span>
-        </span>
-        <span class="kerr">打ち間違えたら 短く8回＝訂正</span>
-        <span class="knob"></span>
+        <span class="kwrap"><span class="ring" id="ring"></span><span class="knob"></span></span>
         <span class="kstat" id="live">ここを押してください</span>
       </button>
-      <div class="auto">
-        <label><input type="checkbox" id="autoFix" checked>止めたら自動確定</label>
-        <label><input type="checkbox" id="sound" checked>音を鳴らす</label>
-      </div>
+        <label class="mute" title="音を消す">
+          <input type="checkbox" id="sound" checked><span></span>
+        </label>
     </div>
-    </div>
-    <div class="sub">
-      <button type="button" id="btnBack">1つ戻す</button>
-      <button type="button" id="btnClear">やり直す</button>
-      <button type="button" class="go" id="btnFix">確定する</button>
     </div>
 
     <div class="out" id="out"><span class="ph">確定した文字がここに並びます</span></div>
@@ -461,8 +465,6 @@ function render(){
   const cur = n && n._;
 
 
-  $('btnFix').disabled = !cur;
-  $('btnBack').disabled = !path;
 
   const out = $('out');
   out.innerHTML = text ? text.replace(/ /g, '&nbsp;') : '<span class="ph">確定した文字がここに並びます</span>';
@@ -507,7 +509,6 @@ function startAuto(){
 
   // 文字が決まっている位置：残り時間をバーで見せて自動確定する
   if (n && n._) {
-    if (!$('autoFix').checked) return;
     const bar = $('bar'); bar.classList.remove('off');
     const wait = autoMs();
     const t0 = performance.now();
@@ -674,6 +675,34 @@ function toneStop(){
     o.stop(c.currentTime + 0.02);
   } catch (e) {}
 }
+/* ===== 電鍵の機械音 =====
+   本物の電鍵は、接点が閉じるときと開くときに「カチ」と鳴る。信号音とは別の、
+   ごく短い打撃音。ノイズを短く切って高い帯域だけ通すと近い音になる。
+   押す側は重く（低め・長め）、離す側は軽く（高め・短め）。実物と同じ差。 */
+let CLICK_BUF = null;
+function clickBuf(c){
+  if (CLICK_BUF) return CLICK_BUF;
+  const n = Math.floor(c.sampleRate * 0.03);
+  const b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  CLICK_BUF = b; return b;
+}
+function clack(down){
+  if (!soundOn()) return;
+  const c = ac(); if (!c) return;
+  if (c.state === 'suspended') c.resume();
+  const t = c.currentTime;
+  const src = c.createBufferSource(); src.buffer = clickBuf(c);
+  const bp = c.createBiquadFilter();
+  bp.type = 'bandpass'; bp.frequency.value = down ? 1900 : 2900; bp.Q.value = 1.1;
+  const g = c.createGain();
+  const dur = down ? 0.028 : 0.018;
+  g.gain.setValueAtTime(down ? 0.3 : 0.19, t);
+  g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+  src.connect(bp); bp.connect(g); g.connect(c.destination);
+  src.start(t); src.stop(t + dur + 0.01);
+}
+
 function playSign(c){ if (soundOn()) beep(c === '.' ? 1 : 3); }
 
 let playing = false;
@@ -794,12 +823,17 @@ function keyDown(ev){
   }
   $('keyBtn').classList.add('down','used');
   stopAuto();
+  clack(true);
   toneStart();
   const live = $('live');
   preview = '.'; drawTree();
   (function tick(){
     if (!keyDownAt) return;
-    const isDash = (performance.now() - keyDownAt) >= DASH_MS;
+    const held = performance.now() - keyDownAt;
+    const isDash = held >= DASH_MS;
+    const ring = $('ring');
+    ring.style.setProperty('--p', Math.min(1, held / DASH_MS).toFixed(3));
+    ring.style.setProperty('--rc', isDash ? '#F0615C' : '#3EB8CE');
     const want = isDash ? '-' : '.';
     if (want !== preview) { preview = want; drawTree(); }   // 変わった時だけ描き直す
     const dest = nodeAt(path + want);
@@ -817,6 +851,8 @@ function keyUp(ev){
   keyDownAt = 0;
   cancelAnimationFrame(keyRaf);
   $('keyBtn').classList.remove('down');
+  clack(false);
+  $('ring').style.setProperty('--p', 0);
   toneStop();
   preview = null;
   $('live').textContent = '押している長さで決まります';
@@ -878,9 +914,6 @@ function keyUp(ev){
 })();
 
 /* ===== 配線 ===== */
-$('btnBack').onclick  = () => { stopAuto(); path = path.slice(0, -1); render(); startAuto(); };
-$('btnClear').onclick = () => { stopAuto(); path = ''; render(); };
-$('btnFix').onclick   = fix;
 $('btnSpace').onclick = () => { text += ' '; render(); };
 $('btnDel').onclick   = () => { text = text.slice(0, -1); render(); };
 $('btnCopy').onclick  = async () => {
@@ -889,7 +922,6 @@ $('btnCopy').onclick  = async () => {
   catch (e) { $('btnCopy').textContent = 'コピーできません'; }
   setTimeout(() => { $('btnCopy').textContent = 'コピー'; }, 1600);
 };
-$('autoFix').addEventListener('change', () => { $('autoFix').checked ? startAuto() : stopAuto(); });
 $('btnPlay').onclick = () => {
   if (playing) return;
   // 音をオフにしたまま押されると無反応に見えるので、その場でオンにする
