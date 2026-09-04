@@ -207,7 +207,8 @@ h2{font-size:16px;margin:0 0 10px;font-weight:800}
 
 .note{font-size:12.5px;color:var(--ink-soft);margin:8px 0 0}
 /* 広告。読み込まれるまで高さを空けておき、記事が飛び跳ねないようにする。 */
-.ad-slot{margin:14px 0 4px;padding-top:12px;border-top:1px solid var(--line);text-align:center}
+.ad-slot{margin:6px 0 14px;padding:10px 0 12px;text-align:center;background:transparent;
+    border-top:1px dashed var(--line);border-bottom:1px dashed var(--line)}
 .ad-label{font-size:10.5px;letter-spacing:.14em;color:var(--ink-soft);margin-bottom:5px}
 .ad-slot ins.adsbygoogle{display:block;width:320px;height:100px;margin:0 auto}
 @media(min-width:760px){ .ad-slot ins.adsbygoogle{width:728px;height:90px} }
@@ -337,21 +338,21 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
       <button type="button" id="btnCopy">コピー</button>
     </div>
 
-    <!-- 広告。出力とその操作ボタンの間には挟まない（機能が分断されるため）。
-         サイズは .ad-slot ins のCSSで標準規格に固定する。
-         インラインで高さを書くとCSSに勝ってしまうので書かない。
-         半端な幅で要求すると通常のバナー在庫が無く、文字だけのクリエイティブが返る。 -->
-    <div class="ad-slot" id="ad-after-out">
-      <div class="ad-label">広告</div>
-      <ins class="adsbygoogle" style="display:block"
-           data-ad-client="ca-pub-1298304917726270"
-           data-ad-slot="2937937957"
-           data-ad-format="horizontal"
-           data-full-width-responsive="false"></ins>
-    </div>
     <p class="note">キーボード: <b>・</b>点 / <b>-</b>線 / Enter確定 / Backspace戻す / スペース語区切り</p>
   </section>
 
+
+
+  <!-- 広告は道具のカードの外に置く。中に入れると枠も背景も本文と同じになり、
+       ツールの一部に見えてしまう（実際そう見えていた）。 -->
+  <div class="ad-slot" id="ad-after-out">
+    <div class="ad-label">広告</div>
+    <ins class="adsbygoogle" style="display:block"
+         data-ad-client="ca-pub-1298304917726270"
+         data-ad-slot="2937937957"
+         data-ad-format="horizontal"
+         data-full-width-responsive="false"></ins>
+  </div>
 
   <section class="card msg" id="msg">
     <h2>モールスで送りあう</h2>
@@ -780,6 +781,10 @@ let lastUpAt = 0;
 function keyDown(ev){
   if (ev) ev.preventDefault();
   if (keyDownAt) return;                     // 二重発火（touch＋mouse）を防ぐ
+  // pointerdown を打ち消しているので、入力欄からフォーカスが外れない。
+  // そのままだとスマホのキーボードが出たままになるので、明示的に外す。
+  const a = document.activeElement;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) a.blur();
   keyDownAt = performance.now();
   // 同じ文字を打っている途中の間だけ数える。文字が変わったあとの間は
   // 「考えていた時間」なので混ぜない。
