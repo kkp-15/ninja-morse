@@ -355,12 +355,6 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
 
   <section class="card msg" id="msg">
     <h2>モールスで送りあう</h2>
-    <div class="mtabs" id="mtabs">
-      <button type="button" data-m="w" aria-pressed="true">文字から作る</button>
-      <button type="button" data-m="r" aria-pressed="false">届いた信号を読む</button>
-    </div>
-
-    <div id="paneW">
       <div class="rev"><input id="revIn" type="text" placeholder="例: SOS / ARIGATO" autocomplete="off" maxlength="60"></div>
       <div class="revout" id="revOut"><span class="ph">入力すると、下にモールスが出ます</span></div>
       <div class="mact">
@@ -369,25 +363,13 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
       </div>
       <p class="mnote" id="wKind"></p>
       <p class="mnote" id="wNote">相手に送ると、受け取った人はこのページで音を聞いて読めます。</p>
+      <p class="mnote"><a href="/yomu/">届いたモールスを読む →</a></p>
       <div class="shr" id="wShare" hidden>
         <a id="shX" href="#" target="_blank" rel="noopener">Xで送る</a>
         <a id="shL" href="#" target="_blank" rel="noopener">LINEで送る</a>
         <button type="button" id="shC">リンクをコピー</button>
       </div>
-    </div>
 
-    <div id="paneR" hidden>
-      <div class="mkind" id="dKind">
-        <button type="button" data-w="0" aria-pressed="true">欧文（英数字）</button>
-        <button type="button" data-w="1" aria-pressed="false">和文（カタカナ）</button>
-      </div>
-      <div class="rev"><input id="decIn" type="text" placeholder="・－・ でも .-. でも貼れます" autocomplete="off"></div>
-      <div class="decout" id="decOut"><span class="ph">受け取った符号を貼ると、ここに文が出ます</span></div>
-      <div class="mact">
-        <button type="button" id="dPlay">音で聞く</button>
-        <button type="button" id="dBack">この文に返事を作る</button>
-      </div>
-    </div>
   </section>
 
   <section class="card">
@@ -455,63 +437,8 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
   このページは仕組みを学ぶための教材です。実際の通信には送受信の技能と資格が必要です。</p>
 </footer>
 
+<script src="/m.js?v=1"></script>
 <script>
-const MORSE = {
-  "A":".-",
-  "B":"-...",
-  "C":"-.-.",
-  "D":"-..",
-  "E":".",
-  "F":"..-.",
-  "G":"--.",
-  "H":"....",
-  "I":"..",
-  "J":".---",
-  "K":"-.-",
-  "L":".-..",
-  "M":"--",
-  "N":"-.",
-  "O":"---",
-  "P":".--.",
-  "Q":"--.-",
-  "R":".-.",
-  "S":"...",
-  "T":"-",
-  "U":"..-",
-  "V":"...-",
-  "W":".--",
-  "X":"-..-",
-  "Y":"-.--",
-  "Z":"--..",
-  "0":"-----",
-  "1":".----",
-  "2":"..---",
-  "3":"...--",
-  "4":"....-",
-  "5":".....",
-  "6":"-....",
-  "7":"--...",
-  "8":"---..",
-  "9":"----.",
-  ".":".-.-.-",
-  ",":"--..--",
-  "?":"..--..",
-  "'":".----.",
-  "!":"-.-.--",
-  "/":"-..-.",
-  "(":"-.--.",
-  ")":"-.--.-",
-  "&":".-...",
-  ":":"---...",
-  ";":"-.-.-.",
-  "=":"-...-",
-  "+":".-.-.",
-  "-":"-....-",
-  "_":"..--.-",
-  "\"":".-..-.",
-  "$":"...-..-",
-  "@":".--.-."
-};
 
 /* ===== 木を組み立てる（MORSEが正本。表と木がずれない） ===== */
 const TREE = {};
@@ -719,23 +646,6 @@ function codeOf(d, i){
    国際モールスの決まりに合わせる。短点=1単位、長点=3単位、
    符号内の間=1単位、文字間=3単位、語間=7単位。
    ここでは1単位=70msにしている（毎分およそ17語のゆっくりめ）。 */
-const UNIT = 70, FREQ = 660;
-let AC = null;
-function ac(){ if (!AC) { const C = window.AudioContext || window.webkitAudioContext; if (C) AC = new C(); } return AC; }
-function beep(units, at){
-  const c = ac(); if (!c) return;
-  const t = at == null ? c.currentTime : at;
-  const dur = units * UNIT / 1000;
-  const o = c.createOscillator(), g = c.createGain();
-  o.type = 'sine'; o.frequency.value = FREQ;
-  // 立ち上がり・立ち下がりを少しなまらせる（そうしないと「プツッ」と鳴る）
-  g.gain.setValueAtTime(0, t);
-  g.gain.linearRampToValueAtTime(0.22, t + 0.008);
-  g.gain.setValueAtTime(0.22, t + dur - 0.008);
-  g.gain.linearRampToValueAtTime(0, t + dur);
-  o.connect(g); g.connect(c.destination);
-  o.start(t); o.stop(t + dur + 0.01);
-}
 function soundOn(){ return $('sound').checked; }
 
 /* 押している間ずっと鳴らす（電鍵と同じ）。離した時点で止める。 */
@@ -790,112 +700,9 @@ function playText(s){
    作れるようにする。共有URLには符号だけを載せる（答えは載せない）ので、
    リンクを開いた人は音を聞いて自分で読むこともできる。
    ・ = . / － = - / 文字の切れ目 = _ / 語の切れ目 = __ （どれもURLで壊れない字） */
-/* ===== 和文モールス =====
-   カタカナを送るための符号。無線局運用規則 別表第一号（第十二条関係）に定めがある。
-   欧文の符号をイロハ順に当てはめて作られたので、同じ ・－ でも欧文ならA、和文ならイになる。
-   だから送る側と読む側で「どちらの表か」を合わせる必要がある（共有リンクは w=1 で持ち回る）。
-   濁点・半濁点は文字のあとに続けて送る（ガ ＝ カ ＋ ゛）。 */
-const WABUN = {
-  "ア":"--.--",
-  "イ":".-",
-  "ウ":"..-",
-  "エ":"-.---",
-  "オ":".-...",
-  "カ":".-..",
-  "キ":"-.-..",
-  "ク":"...-",
-  "ケ":"-.--",
-  "コ":"----",
-  "サ":"-.-.-",
-  "シ":"--.-.",
-  "ス":"---.-",
-  "セ":".---.",
-  "ソ":"---.",
-  "タ":"-.",
-  "チ":"..-.",
-  "ツ":".--.",
-  "テ":".-.--",
-  "ト":"..-..",
-  "ナ":".-.",
-  "ニ":"-.-.",
-  "ヌ":"....",
-  "ネ":"--.-",
-  "ノ":"..--",
-  "ハ":"-...",
-  "ヒ":"--..-",
-  "フ":"--..",
-  "ヘ":".",
-  "ホ":"-..",
-  "マ":"-..-",
-  "ミ":"..-.-",
-  "ム":"-",
-  "メ":"-...-",
-  "モ":"-..-.",
-  "ヤ":".--",
-  "ユ":"-..--",
-  "ヨ":"--",
-  "ラ":"...",
-  "リ":"--.",
-  "ル":"-.--.",
-  "レ":"---",
-  "ロ":".-.-",
-  "ワ":"-.-",
-  "ヰ":".-..-",
-  "ヱ":".--..",
-  "ヲ":".---",
-  "ン":".-.-.",
-  "゛":"..",
-  "゜":"..--.",
-  "ー":".--.-",
-  "（":"-.--.-",
-  "）":".-..-."
-};
-const WABUN_REV = Object.fromEntries(Object.entries(WABUN).map(([k, v]) => [v, k]));
-/* ひらがな→カタカナ、小書き→並字、濁音→文字＋濁点。打つ人に表記の細かさを求めないため。 */
-const DAKU = {'ガ':'カ゛','ギ':'キ゛','グ':'ク゛','ゲ':'ケ゛','ゴ':'コ゛','ザ':'サ゛','ジ':'シ゛','ズ':'ス゛','ゼ':'セ゛','ゾ':'ソ゛',
-  'ダ':'タ゛','ヂ':'チ゛','ヅ':'ツ゛','デ':'テ゛','ド':'ト゛','バ':'ハ゛','ビ':'ヒ゛','ブ':'フ゛','ベ':'ヘ゛','ボ':'ホ゛',
-  'パ':'ハ゜','ピ':'ヒ゜','プ':'フ゜','ペ':'ヘ゜','ポ':'ホ゜','ヴ':'ウ゛'};
-const SMALL = {'ァ':'ア','ィ':'イ','ゥ':'ウ','ェ':'エ','ォ':'オ','ッ':'ツ','ャ':'ヤ','ュ':'ユ','ョ':'ヨ','ヮ':'ワ'};
-function toKana(t){
-  return [...t.replace(/[ぁ-ん]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60))]
-    .map(c => SMALL[c] || DAKU[c] || c).join('');
-}
-function hasKana(t){ return /[ぁ-んァ-ヶー]/.test(t); }
 
 const SITE = 'https://morse.kkpwebninja.com/';
-function toMorse(text, wa){
-  const src = wa ? toKana(text) : text.toUpperCase();
-  const map = wa ? WABUN : MORSE;
-  const out = [];
-  for (const ch of src) {
-    if (ch === ' ' || ch === '\u3000') { out.push(''); continue; }
-    const c = map[ch];
-    if (c) out.push(c);
-  }
-  return out.join('_').replace(/_{2,}/g, '__').replace(/^_+|_+$/g, '');
-}
-/* 読み上げ用に濁点を文字へ戻す。符号としては カ＋゛ が正しいが、
-   画面に「アリカ゛トウ」と出ても読みにくいだけなので「アリガトウ」にする。 */
-const JOIN = Object.fromEntries(Object.entries({'ガ':'カ゛','ギ':'キ゛','グ':'ク゛','ゲ':'ケ゛','ゴ':'コ゛',
-  'ザ':'サ゛','ジ':'シ゛','ズ':'ス゛','ゼ':'セ゛','ゾ':'ソ゛','ダ':'タ゛','ヂ':'チ゛','ヅ':'ツ゛','デ':'テ゛','ド':'ト゛',
-  'バ':'ハ゛','ビ':'ヒ゛','ブ':'フ゛','ベ':'ヘ゛','ボ':'ホ゛','パ':'ハ゜','ピ':'ヒ゜','プ':'フ゜','ペ':'ヘ゜','ポ':'ホ゜',
-  'ヴ':'ウ゛'}).map(([a, b]) => [b, a]));
-function joinDaku(t){ return t.replace(/[ァ-ヶ][゛゜]/g, m => JOIN[m] || m); }
-function fromMorse(code, wa){
-  const norm = code.replace(/[・･·•]/g, '.').replace(/[－ー―‐−–—]/g, '-')
-                   .replace(/[／]/g, '/').replace(/[\u3000]/g, ' ').trim();
-  if (!norm) return {text:'', bad:0};
-  const rev = wa ? WABUN_REV : null;
-  const words = norm.split(/\s*(?:\/|__|\s{2,})\s*/);
-  let bad = 0;
-  const out = words.map(w => w.split(/[\s_]+/).filter(Boolean).map(sym => {
-    const hit = rev ? rev[sym] : Object.keys(MORSE).find(k => MORSE[k] === sym);
-    if (!hit) { bad++; return '?'; }
-    return hit;
-  }).join('')).filter(Boolean).join(' ');
-  return {text: wa ? joinDaku(out) : out, bad};
-}
-function shareUrl(m, wa){ return SITE + '?m=' + m + (wa ? '&w=1' : ''); }
+function shareUrl(m, wa){ return SITE + 'yomu/?m=' + m + (wa ? '&w=1' : ''); }
 
 let lastMorse = '', lastWa = false;
 function renderRev(){
@@ -933,60 +740,10 @@ function renderRev(){
                 + '&text=' + encodeURIComponent(symbols + '\nこれ、読める？　リンクを開くと音でも聞けます');
 }
 
-let decWa = false;
-function renderDec(){
-  const r = fromMorse($('decIn').value, decWa);
-  const box = $('decOut');
-  if (!r.text) { box.innerHTML = '<span class="ph">受け取った符号を貼ると、ここに文が出ます</span>'; return; }
-  box.innerHTML = esc(r.text) + (r.bad
-    ? '<div class="bad">「?」はこの表にない組み合わせです。' +
-      (decWa ? '欧文' : '和文') + 'に切り替えると読めるかもしれません</div>' : '');
-}
 
 function esc(t){ return t.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
-function showPane(m){
-  $('paneW').hidden = m !== 'w';
-  $('paneR').hidden = m !== 'r';
-  [...$('mtabs').children].forEach(b => b.setAttribute('aria-pressed', b.dataset.m === m));
-}
-$('mtabs').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (b) showPane(b.dataset.m);
-});
-$('decIn').addEventListener('input', renderDec);
-$('dKind').addEventListener('click', e => {
-  const b = e.target.closest('button'); if (!b) return;
-  decWa = b.dataset.w === '1';
-  [...$('dKind').children].forEach(x => x.setAttribute('aria-pressed', x === b));
-  renderDec();
-});
 $('wPlay').onclick = () => { const a = ac(); if (a && a.state === 'suspended') a.resume(); playText($('revIn').value); };
-$('dPlay').onclick = () => {
-  const a = ac(); if (a && a.state === 'suspended') a.resume();
-  playMorse(lastDecMorse());
-};
-/* 読む側は符号そのものを鳴らす。和文は playText（欧文表）では鳴らせないため。 */
-function lastDecMorse(){
-  return $('decIn').value.replace(/[・･]/g, '.').replace(/[－ー―‐]/g, '-')
-    .replace(/[／]/g, ' / ').replace(/[\u3000]/g, ' ');
-}
-function playMorse(str){
-  if (!soundOn()) return;
-  const c = ac(); if (!c) return;
-  if (c.state === 'suspended') c.resume();
-  let t = c.currentTime + 0.05;
-  for (const tok of str.split(/\s+/)) {
-    if (tok === '/' || tok === '') { t += 7 * UNIT / 1000; continue; }
-    for (const k of tok) {
-      if (k !== '.' && k !== '-') continue;
-      beep(k === '.' ? 1 : 3, t);
-      t += (k === '.' ? 1 : 3) * UNIT / 1000 + UNIT / 1000;
-    }
-    t += 2 * UNIT / 1000;
-  }
-  const btn = $('dPlay'); btn.textContent = '再生中…';
-  setTimeout(() => { btn.textContent = '音で聞く'; }, (t - c.currentTime) * 1000 + 120);
-}
 $('wCopy').onclick = async () => {
   const t = $('revOut').textContent.trim(); if (!t) return;
   const sym = lastMorse.replace(/__/g, ' / ').replace(/_/g, ' ').replace(/\./g, '・').replace(/-/g, '－');
@@ -999,38 +756,7 @@ $('shC').onclick = async () => {
   catch (e) { $('shC').textContent = 'コピーできません'; }
   setTimeout(() => { $('shC').textContent = 'リンクをコピー'; }, 1600);
 };
-$('dBack').onclick = () => {
-  showPane('w');
-  $('revIn').value = ''; renderRev(); $('revIn').focus();
-  $('msg').scrollIntoView({behavior:'smooth', block:'start'});
-};
 
-/* 共有リンクから来た人。符号を読む側に入れて、音を聞ける状態で迎える。 */
-(function fromLink(){
-  const m = new URLSearchParams(location.search).get('m');
-  if (!m || !/^[.\-_]+$/.test(m)) return;
-  decWa = new URLSearchParams(location.search).get('w') === '1';
-  [...$('dKind').children].forEach(x => x.setAttribute('aria-pressed', (x.dataset.w === '1') === decWa));
-  $('decIn').value = m.replace(/__/g, ' / ').replace(/_/g, ' ').replace(/\./g, '・').replace(/-/g, '－');
-  renderDec();
-  showPane('r');
-  const box = document.createElement('div');
-  box.className = 'inbox';
-  box.innerHTML = '<b>モールスが届いています</b><span>下に読んだ結果が出ています。「音で聞く」で本物の信号音も鳴らせます。読めたら、そのまま返事を作って送り返せます。</span>';
-  $('msg').insertBefore(box, $('mtabs'));
-  addEventListener('load', () => $('msg').scrollIntoView({behavior:'smooth', block:'start'}));
-  // ブラウザは操作なしに音を鳴らせない。最初のタップで一度だけ鳴らす。
-  const once = () => {
-    removeEventListener('pointerdown', once, true);
-    removeEventListener('keydown', once, true);
-    if (soundOn()) playMorse(lastDecMorse());
-  };
-  addEventListener('pointerdown', once, true);
-  addEventListener('keydown', once, true);
-  box.querySelector('span').textContent =
-    '画面のどこかを一度タップすると、届いた信号がそのまま鳴ります。'
-    + '下に読んだ結果が出ています。読めたら、そのまま返事を作って送り返せます。';
-})();
 
 /* ===== 一覧 ===== */
 const SETS = {
@@ -1118,6 +844,13 @@ function keyUp(ev){
 }
 /* 台座の高さは文言や折り返しで変わるので、実測して本文の下余白に渡す。
    決め打ちにすると機種によって広告や本文が隠れる。 */
+/* 以前は ?m= をトップで受けていた。すでに送られたリンクが死なないよう解読ページへ送る。 */
+(function(){
+  if (new URLSearchParams(location.search).get('m')) {
+    location.replace('/yomu/' + location.search + location.hash);
+  }
+})();
+
 (function dockPad(){
   const dock = $('keydock');
   const apply = () => {

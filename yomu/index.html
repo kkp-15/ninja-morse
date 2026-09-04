@@ -1,0 +1,176 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>モールス信号を読む｜貼りつけるだけで文になる無料デコーダー</title>
+<meta name="description" content="受け取ったモールス信号を貼りつけると、その場で文になります。欧文（英数字）と和文（カタカナ）の両方に対応。本物と同じ比の信号音も鳴らせます。読んだあとは、そのまま返事のモールスを作って送り返せます。登録不要・無料。">
+<meta name="theme-color" content="#F08A3C">
+<link rel="canonical" href="https://morse.kkpwebninja.com/yomu/">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="モールス信号が届いています｜貼りつけるだけで読めます">
+<meta property="og:description" content="受け取った符号を貼ると、その場で文になります。信号音も鳴らせて、そのまま返事も作れます。">
+<meta property="og:url" content="https://morse.kkpwebninja.com/yomu/">
+<meta property="og:site_name" content="モールス信号の分岐表">
+<meta property="og:image" content="https://morse.kkpwebninja.com/favicon-512.png">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication",
+ "name":"モールス信号を読む",
+ "url":"https://morse.kkpwebninja.com/yomu/",
+ "description":"受け取ったモールス信号を貼りつけて文に戻す無料デコーダー。欧文と和文の両方に対応。",
+ "applicationCategory":"UtilitiesApplication","operatingSystem":"Web",
+ "offers":{"@type":"Offer","price":"0","priceCurrency":"JPY"},
+ "author":{"@type":"Organization","name":"web忍者の砦"}}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2LM85GJN0L"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-2LM85GJN0L');</script>
+<style>
+:root{--orange:#F08A3C;--orange-deep:#E06A20;--cream:#FBEFDC;--cream-deep:#F7E3C6;
+  --ink:#4A3B28;--ink-soft:#8A7560;--line:#EFD9B6;--paper:#FFFCF7;--dot:#3EB8CE;--dash:#F0615C}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Hiragino Maru Gothic ProN","Zen Maru Gothic",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  line-height:1.7;-webkit-text-size-adjust:100%}
+a{color:#B4451A}
+header{background:linear-gradient(135deg,var(--orange),var(--orange-deep));color:#fff;padding:16px 14px 14px;text-align:center}
+header h1{margin:0;font-size:18px;font-weight:800}
+header p{margin:4px 0 0;font-size:12px;opacity:.95}
+main{max-width:680px;margin:0 auto;padding:14px 12px 40px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+h2{font-size:16px;margin:0 0 10px}
+.inbox{background:linear-gradient(180deg,var(--orange),var(--orange-deep));color:#fff;
+  border-radius:12px;padding:11px 13px;margin-bottom:12px}
+.inbox b{display:block;font-size:14px;font-weight:900;margin-bottom:3px}
+.inbox span{font-size:12px;opacity:.95;line-height:1.65}
+.mkind{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.mkind button{border:1px solid var(--line);background:#fff;color:var(--ink-soft);font:inherit;
+  font-weight:700;font-size:12.5px;border-radius:9px;padding:7px 4px;cursor:pointer}
+.mkind button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.rev input{width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);
+  border-radius:10px;background:#fff;color:var(--ink)}
+.rev input:focus{outline:0;border-color:var(--orange);box-shadow:0 0 0 3px rgba(240,138,60,.16)}
+.decout{min-height:52px;border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:9px;
+  background:var(--cream);font-size:21px;font-weight:800;letter-spacing:.06em;line-height:1.6;word-break:break-word}
+.decout .ph{font-size:13px;font-weight:400;color:var(--ink-soft);letter-spacing:0}
+.decout .bad{color:#B4451A;font-size:12.5px;font-weight:700;letter-spacing:0;margin-top:5px}
+.mact{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.mact button,.mact a{flex:1 1 auto;text-align:center;text-decoration:none;border:1px solid var(--line);
+  background:#fff;color:var(--ink);font:inherit;font-weight:800;font-size:13.5px;border-radius:10px;
+  padding:10px;cursor:pointer;min-width:9em}
+.mact .go{background:linear-gradient(180deg,var(--orange),var(--orange-deep));color:#fff;border-color:transparent}
+.snd{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);margin-top:9px}
+.hint{font-size:12px;color:var(--ink-soft);line-height:1.75;margin:10px 0 0}
+footer{text-align:center;padding:20px 14px 28px;font-size:11.5px;color:var(--ink-soft);line-height:1.9}
+footer a{color:var(--ink-soft)}
+</style>
+
+<header>
+  <h1>モールス信号を読む</h1>
+  <p>受け取った符号を貼ると、その場で文になります</p>
+</header>
+
+<main>
+  <section class="card">
+    <div id="inbox"></div>
+    <div class="mkind" id="dKind">
+      <button type="button" data-w="0" aria-pressed="true">欧文（英数字）</button>
+      <button type="button" data-w="1" aria-pressed="false">和文（カタカナ）</button>
+    </div>
+    <div class="rev"><input id="decIn" type="text" placeholder="・－・ でも .-. でも貼れます" autocomplete="off"></div>
+    <div class="decout" id="decOut"><span class="ph">受け取った符号を貼ると、ここに文が出ます</span></div>
+    <label class="snd"><input type="checkbox" id="sound" checked>音を鳴らす</label>
+    <div class="mact">
+      <button type="button" id="dPlay">音で聞く</button>
+      <a class="go" href="/#msg">返事のモールスを作る</a>
+    </div>
+    <p class="hint">読めないときは、上の「欧文／和文」を切り替えてみてください。同じ <b>・－</b> でも、欧文なら <b>A</b>、和文なら <b>イ</b> です。<br>
+    自分で符号をたどって読みたい人は、<a href="/">分岐表</a>でどうぞ。</p>
+  </section>
+
+  <section class="card">
+    <h2>読めたら、返事もモールスで</h2>
+    <p style="font-size:13.5px;margin:0 0 10px">文字を打つと符号ができ、音を確かめてからXやLINEで送れます。相手はこのページを開くだけで、同じ音を聞いて読めます。</p>
+    <div class="mact"><a class="go" href="/#msg">モールスを作って送る</a></div>
+  </section>
+</main>
+
+<!-- WEBNINJA_RELATED_APPS -->
+<div style="max-width:680px;margin:0 auto;padding:1rem 1.2rem;background:#fffcf7;border:1px solid #f0e6d2;border-radius:12px;font-family:inherit;">
+  <div style="font-weight:800;color:#8b6b3d;font-size:.9rem;margin-bottom:.3rem;">あわせて使えるアプリ</div>
+  <a href="/" style="display:block;padding:.4rem 0;color:#1565c0;text-decoration:none;font-size:.92rem;line-height:1.6;border-top:1px solid #f3ecd9;">モールス信号の分岐表 — 電鍵で打って覚える。点と線をたどるだけ</a>
+  <a href="/hajimekata/" style="display:block;padding:.4rem 0;color:#1565c0;text-decoration:none;font-size:.92rem;line-height:1.6;border-top:1px solid #f3ecd9;">モールス信号のはじめ方 — 覚え方の順番と、最初に買う道具</a>
+  <a href="https://gesture.kkpwebninja.com/" style="display:block;padding:.4rem 0;color:#1565c0;text-decoration:none;font-size:.92rem;line-height:1.6;border-top:1px solid #f3ecd9;">ジェスチャーおでこ当て — 言葉を使わずお題を伝える</a>
+</div>
+
+<footer>
+  <a href="/">分岐表</a>・<a href="/hajimekata/">はじめ方</a>・
+  <a href="https://kkpwebninja.com/" target="_blank" rel="noopener">web忍者の砦</a>・
+  <a href="https://kkpwebninja.com/apps" target="_blank" rel="noopener">全アプリ一覧</a><br>
+  &copy; 2026 web忍者の砦
+</footer>
+
+<script src="/m.js?v=1"></script>
+<script>
+const $ = i => document.getElementById(i);
+const esc = t => t.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function soundOn(){ return $('sound').checked; }
+
+let decWa = false;
+function renderDec(){
+  const r = fromMorse($('decIn').value, decWa);
+  const box = $('decOut');
+  if (!r.text) { box.innerHTML = '<span class="ph">受け取った符号を貼ると、ここに文が出ます</span>'; return; }
+  box.innerHTML = esc(r.text) + (r.bad
+    ? '<div class="bad">「?」はこの表にない組み合わせです。' + (decWa ? '欧文' : '和文') + 'に切り替えると読めるかもしれません</div>' : '');
+}
+function decMorse(){
+  return $('decIn').value.replace(/[・･]/g, '.').replace(/[－ー―‐]/g, '-')
+    .replace(/[／]/g, ' / ').replace(/[　]/g, ' ');
+}
+/* 符号そのものを鳴らす。和文は欧文の表では鳴らせないため、文字ではなく符号を再生する。 */
+function playMorse(str){
+  if (!soundOn()) return;
+  const c = ac(); if (!c) return;
+  if (c.state === 'suspended') c.resume();
+  let t = c.currentTime + 0.05;
+  for (const tok of str.split(/\s+/)) {
+    if (tok === '/' || tok === '') { t += 7 * UNIT / 1000; continue; }
+    for (const k of tok) {
+      if (k !== '.' && k !== '-') continue;
+      beep(k === '.' ? 1 : 3, t);
+      t += (k === '.' ? 1 : 3) * UNIT / 1000 + UNIT / 1000;
+    }
+    t += 2 * UNIT / 1000;
+  }
+  const b = $('dPlay'); b.textContent = '再生中…';
+  setTimeout(() => { b.textContent = '音で聞く'; }, (t - c.currentTime) * 1000 + 120);
+}
+$('decIn').addEventListener('input', renderDec);
+$('dKind').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  decWa = b.dataset.w === '1';
+  [...$('dKind').children].forEach(x => x.setAttribute('aria-pressed', x === b));
+  renderDec();
+});
+$('dPlay').onclick = () => { const a = ac(); if (a && a.state === 'suspended') a.resume(); playMorse(decMorse()); };
+
+/* 共有リンクから来た人を迎える。ブラウザは操作なしに音を鳴らせないので、最初のタップで一度だけ鳴らす。 */
+(function(){
+  const m = new URLSearchParams(location.search).get('m');
+  if (!m || !/^[.\-_]+$/.test(m)) return;
+  decWa = new URLSearchParams(location.search).get('w') === '1';
+  [...$('dKind').children].forEach(x => x.setAttribute('aria-pressed', (x.dataset.w === '1') === decWa));
+  $('decIn').value = m.replace(/__/g, ' / ').replace(/_/g, ' ').replace(/\./g, '・').replace(/-/g, '－');
+  renderDec();
+  $('inbox').innerHTML = '<div class="inbox"><b>モールスが届いています</b>' +
+    '<span>画面のどこかを一度タップすると、届いた信号がそのまま鳴ります。下に読んだ結果が出ています。</span></div>';
+  const once = () => {
+    removeEventListener('pointerdown', once, true);
+    removeEventListener('keydown', once, true);
+    playMorse(decMorse());
+  };
+  addEventListener('pointerdown', once, true);
+  addEventListener('keydown', once, true);
+})();
+</script>
