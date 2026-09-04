@@ -20,14 +20,14 @@
 <meta name="description" content="点と線をタップすると分岐をたどって文字が決まる、モールス信号の学習ツール。A〜Zがなぜその形なのかが木で一目で分かります。表引き・逆引き・和文の一覧つき。無料・登録不要。">
 <link rel="canonical" href="https://morse.kkpwebninja.com/">
 <meta property="og:type" content="website">
-<meta property="og:title" content="モールス信号を送りあう｜打って、送って、読めるページ">
-<meta property="og:description" content="点と線をたどるだけで文字が決まります。電鍵で打って、音を確かめて、XやLINEでそのまま送れます。届いた符号はこのページに貼れば読めます。">
+<meta property="og:title" content="この符号、読めますか？｜モールス信号を送りあう">
+<meta property="og:description" content="開くと、届いた符号がその場で文になります。信号音も鳴らせて、そのまま返事も作れます。点と線をたどるだけの分岐表つき。">
 <meta property="og:url" content="https://morse.kkpwebninja.com/">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <meta property="og:site_name" content="モールス信号の分岐表">
-<meta property="og:image" content="https://morse.kkpwebninja.com/ogp.png?v=20260904c">
+<meta property="og:image" content="https://morse.kkpwebninja.com/ogp.png?v=20260904d">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://morse.kkpwebninja.com/ogp.png">
 <script type="application/ld+json">
@@ -795,7 +795,7 @@ function renderRev(){
   const symbols = lastMorse.replace(/__/g, ' / ').replace(/_/g, ' ').replace(/\./g, '・').replace(/-/g, '－');
   // Xは280字まで。URLは何文字でも23字として数えられる。長い文だと符号だけで
   // 溢れるので、本文に載せる符号は入るぶんだけにして、残りはリンクに任せる。
-  const TAIL = '\n\nこれ、読める？　↓を開くと答えと音が出ます。\n読めたら返事もモールスで。\n#モールス信号';
+  const TAIL = '\n\nモールス信号です。読めますか？\n（・＝トン　－＝ツー）\n#モールス信号';
   const room = 280 - 23 - 1 - TAIL.length;
   const shown = symbols.length <= room ? symbols : symbols.slice(0, Math.max(0, room - 1)).replace(/[\s/]+$/, '') + '…';
   const txt = shown + TAIL;
@@ -809,7 +809,7 @@ function renderRev(){
   $('shX').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt)
                 + '&url=' + encodeURIComponent(shareUrl(lastMorse, lastWa)) + '&via=kkp_webninja';
   $('shL').href = 'https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(shareUrl(lastMorse, lastWa))
-                + '&text=' + encodeURIComponent(symbols + '\nこれ、読める？　↓を開くと答えと音が出ます');
+                + '&text=' + encodeURIComponent(symbols + '\nモールス信号です。読めますか？');
 }
 
 
