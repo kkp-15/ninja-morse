@@ -334,15 +334,23 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
     </div>
     </div>
 
-    <div class="out" id="out"><span class="ph">確定した文字がここに並びます</span></div>
-    <div class="outbtns">
-      <button type="button" id="btnSpace">スペース</button>
-      <button type="button" id="btnDel">1文字消す</button>
-      <button type="button" id="btnPlay">音で聞く</button>
-      <button type="button" id="btnCopy">コピー</button>
-    </div>
-
-    <p class="note">キーボード: <b>・</b>点 / <b>-</b>線 / Enter確定 / Backspace戻す / スペース語区切り</p>
+      <div class="rev"><input id="msgIn" type="text" maxlength="60" autocomplete="off"
+        placeholder="電鍵で打つか、ここに直接入力"></div>
+      <div class="revout" id="revOut"><span class="ph">打つと、ここに符号が出ます</span></div>
+      <div class="outbtns">
+        <button type="button" id="btnSpace">スペース</button>
+        <button type="button" id="btnDel">1文字消す</button>
+        <button type="button" id="btnPlay">音で聞く</button>
+        <button type="button" id="btnCopy">コピー</button>
+      </div>
+      <p class="mnote" id="wKind"></p>
+      <p class="mnote" id="wNote">送ると、受け取った人はリンクを開くだけで同じ音を聞けます。</p>
+      <div class="shr" id="wShare" hidden>
+        <a id="shX" href="#" target="_blank" rel="noopener">Xで送る</a>
+        <a id="shL" href="#" target="_blank" rel="noopener">LINEで送る</a>
+        <button type="button" id="shC">リンクをコピー</button>
+      </div>
+      <p class="note">キーボードでも打てます: <b>・</b>点 / <b>-</b>線 / Backspace戻す　<a href="/yomu/">届いたモールスを読む →</a></p>
   </section>
 
 
@@ -358,24 +366,6 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
          data-full-width-responsive="false"></ins>
   </div>
 
-  <section class="card msg" id="msg">
-    <h2>モールスで送りあう</h2>
-      <div class="rev"><input id="revIn" type="text" placeholder="例: SOS / ARIGATO" autocomplete="off" maxlength="60"></div>
-      <div class="revout" id="revOut"><span class="ph">入力すると、下にモールスが出ます</span></div>
-      <div class="mact">
-        <button type="button" id="wPlay">音で聞く</button>
-        <button type="button" id="wCopy">符号をコピー</button>
-      </div>
-      <p class="mnote" id="wKind"></p>
-      <p class="mnote" id="wNote">相手に送ると、受け取った人はこのページで音を聞いて読めます。</p>
-      <p class="mnote"><a href="/yomu/">届いたモールスを読む →</a></p>
-      <div class="shr" id="wShare" hidden>
-        <a id="shX" href="#" target="_blank" rel="noopener">Xで送る</a>
-        <a id="shL" href="#" target="_blank" rel="noopener">LINEで送る</a>
-        <button type="button" id="shC">リンクをコピー</button>
-      </div>
-
-  </section>
 
   <section class="card">
     <h2>一覧表</h2>
@@ -383,9 +373,11 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
       <button type="button" class="on" data-set="alpha">アルファベット</button>
       <button type="button" data-set="num">数字</button>
       <button type="button" data-set="sym">記号</button>
+      <button type="button" data-set="wabun">和文（カナ）</button>
     </div>
     <div class="grid" id="grid"></div>
-    <p class="note">国際モールス符号（ITU-R M.1677-1）に基づいています。</p>
+    <p class="note" id="setnote" hidden></p>
+    <p class="note">アルファベット・数字・記号は国際モールス符号（ITU-R M.1677-1）、和文は無線局運用規則 別表第一号（第十二条関係）に基づいています。<br>同じ符号でも表が違えば別の文字です（<b>・－</b> は欧文なら <b>A</b>、和文なら <b>イ</b>）。</p>
   </section>
 
   <section class="card know">
@@ -466,8 +458,10 @@ function render(){
 
 
 
-  const out = $('out');
-  out.innerHTML = text ? text.replace(/ /g, '&nbsp;') : '<span class="ph">確定した文字がここに並びます</span>';
+  // 電鍵で打った結果も、直接打ち込んだ文も、同じ1つの欄が持つ。
+  const box = $('msgIn');
+  if (box.value !== text) box.value = text;
+  renderRev();
   drawTree();
 }
 
@@ -736,7 +730,7 @@ function shareUrl(m, wa){ return SITE + 'yomu/?m=' + m + (wa ? '&w=1' : ''); }
 
 let lastMorse = '', lastWa = false;
 function renderRev(){
-  const raw = $('revIn').value;
+  const raw = $('msgIn').value;
   const box = $('revOut');
   if (!raw.trim()) {
     box.innerHTML = '<span class="ph">入力すると、下にモールスが出ます</span>';
@@ -773,14 +767,6 @@ function renderRev(){
 
 function esc(t){ return t.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
-$('wPlay').onclick = () => { const a = ac(); if (a && a.state === 'suspended') a.resume(); playText($('revIn').value); };
-$('wCopy').onclick = async () => {
-  const t = $('revOut').textContent.trim(); if (!t) return;
-  const sym = lastMorse.replace(/__/g, ' / ').replace(/_/g, ' ').replace(/\./g, '・').replace(/-/g, '－');
-  try { await navigator.clipboard.writeText(sym); $('wCopy').textContent = 'コピーしました'; }
-  catch (e) { $('wCopy').textContent = 'コピーできません'; }
-  setTimeout(() => { $('wCopy').textContent = '符号をコピー'; }, 1600);
-};
 $('shC').onclick = async () => {
   try { await navigator.clipboard.writeText(shareUrl(lastMorse)); $('shC').textContent = 'コピーしました'; }
   catch (e) { $('shC').textContent = 'コピーできません'; }
@@ -792,12 +778,19 @@ $('shC').onclick = async () => {
 const SETS = {
   alpha: [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'],
   num:   [...'0123456789'],
-  sym:   Object.keys(MORSE).filter(k => !/[A-Z0-9]/.test(k))
+  sym:   Object.keys(MORSE).filter(k => !/[A-Z0-9]/.test(k)),
+  wabun: Object.keys(WABUN)
 };
+/* 和文は別の表を引く。同じ ・－ でも欧文はA、和文はイなので混ぜてはいけない。 */
+const SETMAP = { alpha: MORSE, num: MORSE, sym: MORSE, wabun: WABUN };
+const SETNOTE = { wabun: 'カタカナのみ。濁点（<b>゛</b>）と半濁点（<b>゜</b>）は文字のあとに続けて送ります（ガ＝カ＋゛）。' };
 function renderGrid(set){
+  const map = SETMAP[set] || MORSE;
   $('grid').innerHTML = SETS[set].map(ch =>
     '<div class="cell"><b>' + (ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch) + '</b><span>' +
-    MORSE[ch].replace(/\./g, '・').replace(/-/g, '－') + '</span></div>').join('');
+    map[ch].replace(/\./g, '・').replace(/-/g, '－') + '</span></div>').join('');
+  const n = $('setnote');
+  if (n) { n.innerHTML = SETNOTE[set] || ''; n.hidden = !SETNOTE[set]; }
 }
 
 /* ===== 電鍵 =====
@@ -928,7 +921,8 @@ $('btnPlay').onclick = () => {
   if (!$('sound').checked) { $('sound').checked = true; }
   playText(text);
 };
-$('revIn').addEventListener('input', renderRev);
+// 直接打ち込んだときも text を正とする。電鍵の打ちかけは捨てる（別物が混ざるため）。
+$('msgIn').addEventListener('input', () => { stopAuto(); path = ''; text = $('msgIn').value; renderRev(); drawTree(); });
 document.querySelectorAll('.tabs button').forEach(b => {
   b.onclick = () => {
     document.querySelectorAll('.tabs button').forEach(x => x.classList.remove('on'));
