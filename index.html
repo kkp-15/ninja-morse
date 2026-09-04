@@ -255,6 +255,8 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
     font-size:13.5px;border-radius:10px;padding:10px 8px;cursor:pointer;border:1px solid transparent}
   #shX{background:#000;color:#fff}
   #shL{background:#06C755;color:#fff}
+  #shS{grid-column:1 / -1;background:var(--cream);color:var(--ink);border-color:var(--line2)}
+  #shS:disabled{opacity:.6}
   #shC{grid-column:1 / -1;background:#fff;color:var(--ink);border-color:var(--line)}
   .inbox{background:linear-gradient(180deg,var(--orange),var(--orange-deep));color:#fff;
     border-radius:12px;padding:11px 13px;margin-bottom:11px}
@@ -372,6 +374,7 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
       <div class="shr" id="wShare" hidden>
         <a id="shX" href="#" target="_blank" rel="noopener">Xで送る</a>
         <a id="shL" href="#" target="_blank" rel="noopener">LINEで送る</a>
+        <button type="button" id="shS" hidden>音のファイルを送る</button>
         <button type="button" id="shC">リンクをコピー</button>
       </div>
     </div>
@@ -897,6 +900,80 @@ function fromMorse(code, wa){
 }
 function shareUrl(m, wa){ return SITE + '?m=' + m + (wa ? '&w=1' : ''); }
 
+/* ===== 音そのものを送る =====
+   XやLINEの投稿本文に音を載せることはできない（intentは文とURLしか渡せない）。
+   できるのは、端末の共有シートに音のファイルを渡すこと。iOSのSafariや
+   AndroidのChromeなら、そこからLINEやメッセージにそのまま添付できる。
+   使える端末でだけボタンを出す（PCのブラウザにはこの仕組みがない）。 */
+function morseToPlan(m){
+  // 符号を「鳴らす秒数／休む秒数」の並びに直す。画面の再生と同じ比で作る。
+  const u = UNIT / 1000, out = [];
+  const words = m.split('__');
+  words.forEach((w, wi) => {
+    if (wi) out.push({on:false, d:7 * u});
+    w.split('_').filter(Boolean).forEach((sym, si) => {
+      if (si) out.push({on:false, d:3 * u});
+      [...sym].forEach((k, ki) => {
+        if (ki) out.push({on:false, d:u});
+        out.push({on:true, d:(k === '.' ? 1 : 3) * u});
+      });
+    });
+  });
+  return out;
+}
+async function makeWav(m){
+  const SR = 22050;
+  const plan = morseToPlan(m);
+  const total = plan.reduce((a, x) => a + x.d, 0) + 0.4;
+  const oc = new OfflineAudioContext(1, Math.ceil(total * SR), SR);
+  let t = 0.2;
+  for (const seg of plan) {
+    if (seg.on) {
+      const o = oc.createOscillator(), g = oc.createGain();
+      o.type = 'sine'; o.frequency.value = FREQ;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.5, t + 0.006);
+      g.gain.setValueAtTime(0.5, t + seg.d - 0.006);
+      g.gain.linearRampToValueAtTime(0, t + seg.d);
+      o.connect(g); g.connect(oc.destination);
+      o.start(t); o.stop(t + seg.d + 0.01);
+    }
+    t += seg.d;
+  }
+  const buf = await oc.startRendering();
+  const pcm = buf.getChannelData(0), n = pcm.length;
+  const ab = new ArrayBuffer(44 + n * 2), v = new DataView(ab);
+  const put = (o, str) => { for (let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
+  put(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); put(8, 'WAVEfmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, SR, true); v.setUint32(28, SR * 2, true); v.setUint16(32, 2, true);
+  v.setUint16(34, 16, true); put(36, 'data'); v.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) {
+    const x = Math.max(-1, Math.min(1, pcm[i]));
+    v.setInt16(44 + i * 2, x < 0 ? x * 0x8000 : x * 0x7FFF, true);
+  }
+  return new File([ab], 'morse.wav', {type:'audio/wav'});
+}
+function canShareFile(){
+  try { return !!(navigator.canShare && navigator.share &&
+    navigator.canShare({files:[new File([new Uint8Array([0])], 'a.wav', {type:'audio/wav'})]})); }
+  catch (e) { return false; }
+}
+async function shareSound(){
+  const btn = $('shS');
+  if (!lastMorse) return;
+  btn.disabled = true; btn.textContent = '音を作っています…';
+  try {
+    const f = await makeWav(lastMorse);
+    await navigator.share({files:[f], text:'これ、読める？', url: shareUrl(lastMorse, lastWa)});
+    btn.textContent = '音のファイルを送る';
+  } catch (e) {
+    btn.textContent = (e && e.name === 'AbortError') ? '音のファイルを送る' : '送れませんでした';
+    setTimeout(() => { btn.textContent = '音のファイルを送る'; }, 1800);
+  }
+  btn.disabled = false;
+}
+
 let lastMorse = '', lastWa = false;
 function renderRev(){
   const raw = $('revIn').value;
@@ -994,6 +1071,8 @@ $('wCopy').onclick = async () => {
   catch (e) { $('wCopy').textContent = 'コピーできません'; }
   setTimeout(() => { $('wCopy').textContent = '符号をコピー'; }, 1600);
 };
+$('shS').onclick = shareSound;
+if (canShareFile()) $('shS').hidden = false;
 $('shC').onclick = async () => {
   try { await navigator.clipboard.writeText(shareUrl(lastMorse)); $('shC').textContent = 'コピーしました'; }
   catch (e) { $('shC').textContent = 'コピーできません'; }
@@ -1019,6 +1098,17 @@ $('dBack').onclick = () => {
   box.innerHTML = '<b>モールスが届いています</b><span>下に読んだ結果が出ています。「音で聞く」で本物の信号音も鳴らせます。読めたら、そのまま返事を作って送り返せます。</span>';
   $('msg').insertBefore(box, $('mtabs'));
   addEventListener('load', () => $('msg').scrollIntoView({behavior:'smooth', block:'start'}));
+  // ブラウザは操作なしに音を鳴らせない。最初のタップで一度だけ鳴らす。
+  const once = () => {
+    removeEventListener('pointerdown', once, true);
+    removeEventListener('keydown', once, true);
+    if (soundOn()) playMorse(lastDecMorse());
+  };
+  addEventListener('pointerdown', once, true);
+  addEventListener('keydown', once, true);
+  box.querySelector('span').textContent =
+    '画面のどこかを一度タップすると、届いた信号がそのまま鳴ります。'
+    + '下に読んだ結果が出ています。読めたら、そのまま返事を作って送り返せます。';
 })();
 
 /* ===== 一覧 ===== */
