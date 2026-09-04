@@ -68,8 +68,8 @@ header{background:linear-gradient(135deg,var(--orange),var(--orange-deep));color
   padding:14px 16px;text-align:center}
 header h1{margin:0;font-size:18px;font-weight:800;letter-spacing:.01em}
 header p{margin:4px 0 0;font-size:12px;opacity:.95}
-main{max-width:820px;margin:0 auto;padding:14px 12px 40px}
-.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px}
+main{max-width:820px;margin:0 auto;padding:10px 12px 28px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:12px}
 h2{font-size:16px;margin:0 0 10px;font-weight:800}
 
 /* 現在の入力 */
@@ -112,7 +112,10 @@ h2{font-size:16px;margin:0 0 10px;font-weight:800}
 @keyframes knobPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 @keyframes knobRing{0%{transform:scale(.85);opacity:.9}70%{transform:scale(1.25);opacity:0}100%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.keybtn .knob{animation:none}.keybtn .knob::after{display:none}}
-    /* 打ち方の説明。ボタンの中に置くと押す場所が狭くなるので題の下へ小さく出す。 */
+    /* 教材である旨の注意。フッターではなく本文の締めとして置く。 */
+  .caution{max-width:820px;margin:0 auto 10px;padding:0 12px;
+    font-size:11.5px;color:var(--ink-soft);line-height:1.8;text-align:center}
+  /* 打ち方の説明。ボタンの中に置くと押す場所が狭くなるので題の下へ小さく出す。 */
   .hrule{margin:6px 0 0;font-size:11.5px;line-height:1.8;opacity:.95}
   .hrule b{font-weight:800}
   .hrule i{display:inline-block;vertical-align:middle;margin-right:3px;background:#fff}
@@ -335,19 +338,19 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
     </div>
 
       <div class="rev"><input id="msgIn" type="text" maxlength="60" autocomplete="off"
-        placeholder="電鍵で打つか、ここに直接入力"></div>
+        placeholder="電鍵で打つか、ここに入力（かな・カナ・英数字）"></div>
       <div class="revout" id="revOut"><span class="ph">打つと、ここに符号が出ます</span></div>
-      <div class="outbtns">
-        <button type="button" id="btnSpace">スペース</button>
-        <button type="button" id="btnDel">1文字消す</button>
-        <button type="button" id="btnPlay">音で聞く</button>
-      </div>
       <p class="mnote" id="wKind"></p>
       <p class="mnote" id="wNote">送ると、受け取った人はリンクを開くだけで同じ音を聞けます。</p>
       <div class="shr" id="wShare" hidden>
         <a id="shX" href="#" target="_blank" rel="noopener">Xで送る</a>
         <a id="shL" href="#" target="_blank" rel="noopener">LINEで送る</a>
         <button type="button" id="shC">リンクをコピー</button>
+      </div>
+      <div class="outbtns">
+        <button type="button" id="btnSpace">スペース</button>
+        <button type="button" id="btnDel">1文字消す</button>
+        <button type="button" id="btnPlay">音で聞く</button>
       </div>
       <p class="note">キーボードでも打てます: <b>・</b>点 / <b>-</b>線 / Backspace戻す　<a href="/yomu/">届いたモールスを読む →</a></p>
   </section>
@@ -428,10 +431,8 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
   </section>
 </main>
 
-<footer>
-  <p>点と線の長さの比は1:3、文字と文字の間は3、語と語の間は7が国際的な決まりです。<br>
-  このページは仕組みを学ぶための教材です。実際の通信には送受信の技能と資格が必要です。</p>
-</footer>
+<p class="caution">このページは仕組みを学ぶための教材です。実際に電波を出して交信するには、
+  アマチュア無線技士の資格と無線局の免許が必要です。</p>
 
 <script src="/m.js?v=1"></script>
 <script>
@@ -766,7 +767,7 @@ function renderRev(){
     + '　' + raw.length + '文字 → ' + n + '符号'
     + (symbols.length > room ? '（Xでは符号の途中まで表示。全文はリンクで届きます）' : '');
   $('wNote').textContent = miss
-    ? '×の文字は符号がありません。その字は送られません。'
+    ? '×の字は送れません。モールスには漢字の符号がないので、ひらがな・カタカナ・英数字にしてください。'
     : '送ると、受け取った人はリンクを開くだけで同じ音を聞けます。';
   $('shX').href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(txt)
                 + '&url=' + encodeURIComponent(shareUrl(lastMorse, lastWa)) + '&via=kkp_webninja';
