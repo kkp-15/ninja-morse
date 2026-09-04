@@ -132,15 +132,18 @@ h2{font-size:16px;margin:0 0 10px;font-weight:800}
   .decout .ph{font-size:13px;font-weight:400;color:var(--ink-soft);letter-spacing:0}
   .decout .bad{color:#B4451A;font-size:12px;font-weight:700;letter-spacing:0;margin-top:5px}
   /* 教材である旨の注意。フッターではなく本文の締めとして置く。 */
+  /* 分岐図の読み方。図の中に小さく置くと読めないので、図の上に出す。 */
+  .legend2{margin:0 0 8px;font-size:12px;line-height:1.85;color:var(--ink-soft)}
+  .legend2 b{color:var(--ink);font-weight:800}
+  .legend2 i{display:inline-block;vertical-align:middle;margin-right:4px}
+  .legend2 i.d{width:9px;height:9px;border-radius:99px;background:var(--dot)}
+  .legend2 i.h{width:24px;height:9px;border-radius:3px;background:var(--dash)}
+  .legend2 a{color:#B4451A}
   h2 .h2sub{display:block;font-size:11.5px;font-weight:600;color:var(--ink-soft);margin-top:2px;letter-spacing:0}
+  .deep .dn a{color:#B4451A;font-weight:800}
   .caution{max-width:820px;margin:0 auto 10px;padding:0 12px;
     font-size:11.5px;color:var(--ink-soft);line-height:1.8;text-align:center}
   /* 打ち方の説明。ボタンの中に置くと押す場所が狭くなるので題の下へ小さく出す。 */
-  .hrule{margin:6px 0 0;font-size:11.5px;line-height:1.8;opacity:.95}
-  .hrule b{font-weight:800}
-  .hrule i{display:inline-block;vertical-align:middle;margin-right:3px;background:#fff}
-  .hrule i.d{width:7px;height:7px;border-radius:99px}
-  .hrule i.h{width:17px;height:7px;border-radius:3px}
   /* 押している長さを、つまみを囲む輪の伸びで見せる。文字を読むより速く分かる。
      2単位で一周し、そこを越えると線の色に変わる。 */
   .kwrap{position:relative;display:grid;place-items:center;width:76px;height:76px}
@@ -338,14 +341,16 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
 <header>
   <h1>モールス信号を送り合う</h1>
   <p>打って、音を確かめて、そのまま送る。届いた符号は貼れば読めます</p>
-  <p class="hrule"><b><i class="d"></i>短く押す</b>＝トン　<b><i class="h"></i>長く押す</b>＝ツー　<b>短く8回</b>＝訂正</p>
+
 </header>
 
 <main>
   <div id="inbox"></div>
 
   <section class="card">
-    <h2>打つ・送る<span class="h2sub">分岐図をたどれば、初めてでも打てます</span></h2>
+    <h2>打つ・送る</h2>
+    <p class="legend2"><b><i class="d"></i>短い線</b>＝トン（短く押す）　<b><i class="h"></i>長い線</b>＝ツー（長く押す）<br>
+    たどった先の丸が、その符号の文字です。<b>4打目より先にも数字と記号が続きます</b>（<a href="#list">一覧表</a>）。</p>
     <div class="treewrap"><div class="tree" id="tree"></div></div>
     <div class="keydock" id="keydock">
     <div class="bar off" id="bar"><i></i></div>
@@ -408,8 +413,8 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
   </div>
 
 
-  <section class="card">
-    <h2>一覧表</h2>
+  <section class="card" id="list">
+    <h2>一覧表<span class="h2sub">4打目より先の数字・記号もここにあります</span></h2>
     <div class="tabs">
       <button type="button" class="on" data-set="alpha">アルファベット</button>
       <button type="button" data-set="num">数字</button>
@@ -570,12 +575,12 @@ function fix(){ stopAuto(); const n = nodeAt(path); if (n && n._) { text += n._;
 const DEPTH = 4;                      // 4段でA〜Zがちょうど収まる
 function drawTree(){
   // 画面幅に収めるため viewBox で描き、CSSで width:100% にする。
-  const W = 344, ROW = 44, TOP = 30, BOT = 14, LX = 15;
+  const W = 344, ROW = 45, TOP = 16, BOT = 16, LX = 4;
   const H = TOP + ROW * DEPTH + BOT;
-  const MX = LX + 8;
-  const xOf = (d, i) => MX + (W - MX - 9) * (i + 0.5) / (1 << d);
+  const MX = LX + 6;
+  const xOf = (d, i) => MX + (W - MX - 6) * (i + 0.5) / (1 << d);
   const yOf = (d) => TOP + ROW * d;
-  const rOf = (d) => d === 0 ? 11 : d === DEPTH ? 9.2 : 10.5;
+  const rOf = (d) => d === 0 ? 11.5 : d === DEPTH ? 10 : 11;
 
   // その節から先に文字があるか（無い枝は描かない。線だけ伸びて宙に浮くのを防ぐ）
   function hasLabel(node, depth){
@@ -587,14 +592,6 @@ function drawTree(){
 
   let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="モールス信号の分岐図">';
 
-  // 段の目盛り（何打目か）。深さ＝打った回数であることを示す。
-  for (let d = 1; d <= DEPTH; d++) {
-    s += '<line x1="' + LX + '" y1="' + yOf(d) + '" x2="' + (W - 4) + '" y2="' + yOf(d) +
-         '" stroke="#EFE0C4" stroke-width="1" stroke-dasharray="2 4"/>';
-    s += '<text x="' + (LX - 5) + '" y="' + (yOf(d) + 3.5) + '" text-anchor="middle" font-size="9" ' +
-         'font-weight="700" fill="#B8A183">' + d + '</text>';
-  }
-  s += '<text x="' + (LX - 5) + '" y="' + (TOP - 13) + '" text-anchor="middle" font-size="8" fill="#B8A183">打</text>';
 
   // 枝
   for (let d = 0; d < DEPTH; d++) {
@@ -613,10 +610,10 @@ function drawTree(){
         const ex = x1 + (x2 - x1) * b, ey = y1 + (y2 - y1) * b;
         const base = c === '.' ? '#3EB8CE' : '#F0615C';
         s += '<line x1="' + x1.toFixed(1) + '" y1="' + y1 + '" x2="' + x2.toFixed(1) + '" y2="' + y2 +
-             '" stroke="#EBDCC0" stroke-width="1"/>';
+             '" stroke="' + (on ? '#F3D3AC' : '#EDE0C8') + '" stroke-width="' + (on ? 1.6 : 1) + '"/>';
         s += '<line x1="' + sx.toFixed(1) + '" y1="' + sy.toFixed(1) + '" x2="' + ex.toFixed(1) + '" y2="' + ey.toFixed(1) +
-             '" stroke="' + (on ? '#F08A3C' : base) + '" stroke-width="' + (on ? 4.6 : 3.4) +
-             '" stroke-linecap="round"' + (on ? '' : ' opacity=".72"') + '/>';
+             '" stroke="' + (on ? '#F08A3C' : base) + '" stroke-width="' + (on ? 5 : 3.6) +
+             '" stroke-linecap="round"' + (on ? '' : (path ? ' opacity=".42"' : ' opacity=".8"')) + '/>';
       }
     }
   }
@@ -650,13 +647,6 @@ function drawTree(){
     }
   }
 
-  // 凡例（図の中に置く。外に文章を増やさないため）
-  s += '<g font-size="9.5" font-weight="800">' +
-       '<line x1="' + (MX + 2) + '" y1="12" x2="' + (MX + 10) + '" y2="12" stroke="#3EB8CE" stroke-width="3.4" stroke-linecap="round"/>' +
-       '<text x="' + (MX + 15) + '" y="15.5" fill="#1d7d90">短い線＝トン</text>' +
-       '<line x1="' + (MX + 84) + '" y1="12" x2="' + (MX + 108) + '" y2="12" stroke="#F0615C" stroke-width="3.4" stroke-linecap="round"/>' +
-       '<text x="' + (MX + 113) + '" y="15.5" fill="#B23A36">長い線＝ツー</text>' +
-       '</g>';
   s += '</svg>';
   let extra = '';
   if (path.length > DEPTH) {
@@ -666,7 +656,8 @@ function drawTree(){
     const cur = nodeAt(path);
     extra = '<div class="deep"><b>' + ((head && head._) || '') + '</b> から さらに ' + rest +
             ' → <b>' + ((cur && cur._) || '‥') + '</b>' +
-            '<span class="dn">数字と記号は5段目より下にあります</span></div>';
+            '<span class="dn">図は4打目までです。数字と記号はこの先にあります → ' +
+            '<a href="#list">一覧表で見る</a></span></div>';
   }
   $('tree').innerHTML = s + extra;
 }
