@@ -330,6 +330,15 @@ footer{text-align:center;padding:22px 14px 26px;font-size:12px;color:var(--ink-s
   .keybtn .knob{width:46px;height:46px}
 }
 @media(min-width:700px){ header h1{font-size:21px} .res{font-size:64px} }
+
+/* 見た目の調整（2026-09-24・AIっぽさを消す）: 影・グラデーション・大きな角丸・英字の飾り見出しをやめる（測定から生成し、機能に関わる部品は手で除外）。元のルールは上に残し上書き。 */
+body { background: #fff; }
+section.card, div.treewrap, #revOut, #read, #list { border-radius: 8px; }
+#keydock { box-shadow: none; }
+#keyBtn { box-shadow: none; background: rgb(90, 70, 50); border-radius: 8px; }
+#btnPlay { box-shadow: none; background: rgb(240, 138, 60); border-radius: 8px; }
+span.ba { border-radius: 6px; }
+a.more { background: rgb(240, 138, 60); border-radius: 8px; }
 </style>
 </head>
 <body>
