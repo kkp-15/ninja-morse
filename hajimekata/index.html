@@ -65,6 +65,11 @@ code{background:var(--cream);border-radius:5px;padding:1px 6px;letter-spacing:.1
   border:2px solid var(--orange);color:var(--orange-deep);border-radius:12px;padding:12px;background:#fff}
 footer{text-align:center;font-size:11.5px;color:var(--ink-soft);padding:0 16px 30px;line-height:1.8}
 footer a{color:var(--ink-soft)}
+
+/* 見た目の調整（2026-09-24・AIっぽさを消す）: 影・大きな角丸・クリーム全面の地をやめる（測定から生成し、機能・広告表示に関わる部品は手で除外）。元のルールは上に残し上書き。 */
+body { background: #fff; }
+section.card, div.item, a.back { border-radius: 8px; }
+span.n { border-radius: 6px; }
 </style>
 
 <header>
