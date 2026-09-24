@@ -339,6 +339,9 @@ section.card, div.treewrap, #revOut, #read, #list { border-radius: 8px; }
 #btnPlay { box-shadow: none; background: rgb(240, 138, 60); border-radius: 8px; }
 span.ba { border-radius: 6px; }
 a.more { background: rgb(240, 138, 60); border-radius: 8px; }
+/* 読み取り前だけ出る挿し絵（2026-09-24・Codex制作・シリーズ共通の男の子とウルフ）。文が出ると消える */
+.decout .ph-pic{display:flex;align-items:center;gap:10px}
+.decout .ph-pic img{width:96px;height:auto;flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -396,7 +399,7 @@ a.more { background: rgb(240, 138, 60); border-radius: 8px; }
       <button type="button" data-w="1" aria-pressed="false">和文（カタカナ）</button>
     </div>
     <div class="rev"><input id="decIn" type="text" placeholder="・－・ でも .-. でも貼れます" autocomplete="off"></div>
-    <div class="decout" id="decOut"><span class="ph">受け取った符号を貼ると、ここに文が出ます</span></div>
+    <div class="decout" id="decOut"><span class="ph ph-pic"><img src="/img/empty-listen.webp" width="240" height="155" alt="" loading="lazy" decoding="async"><span>受け取った符号を貼ると、ここに文が出ます</span></span></div>
     <div class="outbtns">
       <button type="button" id="dPlay">音で聞く</button>
       <button type="button" id="dUse">この文を打ってみる</button>
@@ -933,7 +936,7 @@ let decWa = false;
 function renderDec(){
   const r = fromMorse($('decIn').value, decWa);
   const box = $('decOut');
-  if (!r.text) { box.innerHTML = '<span class="ph">受け取った符号を貼ると、ここに文が出ます</span>'; return; }
+  if (!r.text) { box.innerHTML = '<span class="ph ph-pic"><img src="/img/empty-listen.webp" width="240" height="155" alt="" loading="lazy" decoding="async"><span>受け取った符号を貼ると、ここに文が出ます</span></span>'; return; }
   box.innerHTML = esc(r.text) + (r.bad
     ? '<div class="bad">「?」はこの表にない組み合わせです。' + (decWa ? '欧文' : '和文') + 'に切り替えると読めるかも</div>' : '');
 }
