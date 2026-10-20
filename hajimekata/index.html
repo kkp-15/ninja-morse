@@ -110,6 +110,16 @@ details>summary{color:var(--k-sumi);text-decoration:underline;text-decoration-co
 .cell{border:var(--k-bw-s) solid var(--k-sumi);border-radius:var(--k-r)}
 .cell b{font-family:var(--k-bold);font-weight:400}
 .rev input{border:var(--k-bw-s) solid var(--k-sumi);border-radius:var(--k-r)}
+/* ===== 2026-10-20 清潔感（kkp-kit 17eac63 の方針）: 段の箱と影・左オレンジ線＋帯をやめ、罫線1本と余白に。STEP は k-step の形（箱にせず朱の太字＋右の細い線）。
+   道具の紹介（.item・買うボタン・PR表記）は触らない。 */
+.card{background:none;border:0;border-top:var(--k-bw-s) solid var(--k-sumi);border-radius:0;box-shadow:none;padding:18px 2px 8px;margin-bottom:12px}
+section.card{border-radius:0}
+.card h2,main h2{padding-bottom:6px;border-bottom:var(--k-bw-s) solid var(--k-sumi)}
+.card:has(h2){border-top:0}
+.step{border:0;border-bottom:1px solid var(--k-line-soft);background:none;border-radius:0;padding:12px 2px;margin:0}
+.step:last-of-type{border-bottom:0}
+.step .n{display:flex;align-items:center;gap:10px;background:none;color:var(--k-shu);font-family:var(--k-bold);font-weight:400;font-size:13px;letter-spacing:.08em;border-radius:0;padding:0;margin-bottom:4px}
+.step .n::after{content:"";flex:1;height:1px;background:var(--k-line-soft)}
 </style>
 
 <body class="k-page">

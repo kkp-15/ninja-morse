@@ -383,6 +383,14 @@ details>summary{color:var(--k-sumi);text-decoration:underline;text-decoration-co
 .cell{border:var(--k-bw-s) solid var(--k-sumi);border-radius:var(--k-r)}
 .cell b{font-family:var(--k-bold);font-weight:400}
 .rev input{border:var(--k-bw-s) solid var(--k-sumi);border-radius:var(--k-r)}
+/* ===== 2026-10-20 清潔感（kkp-kit 17eac63 の方針）: 電鍵の地を茶色→墨に、つまみの脈打つ動き・波紋をやめる（無限に動く飾りは使わない）。
+   分岐図の水色/赤・短点/長点の色・押している長さの輪（.ring）は意味の色なので変えない。 */
+#keyBtn,.keybtn{background:var(--k-sumi);color:#fff;border-radius:var(--k-r);box-shadow:none}
+.keybtn:active,.keybtn.down{transform:translateY(3px);box-shadow:none}
+.keybtn .knob{background:var(--k-orange);border:var(--k-bw-s) solid var(--k-kinari);box-shadow:none;animation:none}
+.keybtn .knob::after{display:none;animation:none}
+.keybtn.down .knob{background:var(--k-shu)}
+@media(max-width:700px){.keydock{background:var(--k-surface);border-top:var(--k-bw-s) solid var(--k-sumi);box-shadow:none}}
 </style>
 <!-- kkp-rel-d4:start -->
 <style id="kkp-rel-d4">
