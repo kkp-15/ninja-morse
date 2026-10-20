@@ -391,6 +391,8 @@ details>summary{color:var(--k-sumi);text-decoration:underline;text-decoration-co
 .keybtn .knob::after{display:none;animation:none}
 .keybtn.down .knob{background:var(--k-shu)}
 @media(max-width:700px){.keydock{background:var(--k-surface);border-top:var(--k-bw-s) solid var(--k-sumi);box-shadow:none}}
+/* 段の箱（3px のふち＋影）をやめて罫線1本と余白に（入れ物に影は付けない） */
+section.card,section#read.card,section#list.card{background:none;border:0;border-top:var(--k-bw-s) solid var(--k-sumi);border-radius:0;box-shadow:none;padding:16px 0 6px;margin-bottom:22px}
 </style>
 <!-- kkp-rel-d4:start -->
 <style id="kkp-rel-d4">
