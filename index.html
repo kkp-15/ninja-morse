@@ -471,7 +471,7 @@ section.card,section#read.card,section#list.card{background:none;border:0;border
 
 
   <section class="card" id="read">
-    <h2>届いた符号を読む<span class="h2sub">貼りつけると文になります。画面をタップすると信号音も鳴ります</span></h2>
+    <h2>届いた符号を読む<span class="h2sub">貼ると文になります。タップで音も鳴ります</span></h2>
     <div class="mkind" id="dKind">
       <button type="button" data-w="0" aria-pressed="true">欧文（英数字）</button>
       <button type="button" data-w="1" aria-pressed="false">和文（カタカナ）</button>
@@ -482,7 +482,7 @@ section.card,section#read.card,section#list.card{background:none;border:0;border
       <button type="button" id="dPlay">音で聞く</button>
       <button type="button" id="dUse">この文を打ってみる</button>
     </div>
-    <p class="note">読めないときは上の切替を。同じ <b>・－</b> でも欧文なら <b>A</b>、和文なら <b>イ</b> です。</p>
+    <p class="note">読めないときは上で欧文・和文を切り替え（<b>・－</b> は欧文 <b>A</b>・和文 <b>イ</b>）。</p>
   </section>
 
   <!-- 広告は道具のカードの外に置く。中に入れると枠も背景も本文と同じになり、
@@ -507,15 +507,15 @@ section.card,section#read.card,section#list.card{background:none;border:0;border
     </div>
     <div class="grid" id="grid"></div>
     <p class="note" id="setnote" hidden></p>
-    <p class="note">アルファベット・数字・記号は国際モールス符号（ITU-R M.1677-1）、和文は無線局運用規則 別表第一号（第十二条関係）に基づいています。<br>同じ符号でも表が違えば別の文字です（<b>・－</b> は欧文なら <b>A</b>、和文なら <b>イ</b>）。</p>
+    <p class="note">欧文は国際モールス符号（ITU-R M.1677-1）、和文は無線局運用規則に基づいています。</p>
   </section>
 
   <section class="card know">
     <h2>モールス信号の決まりごと</h2>
-    <p class="lead">符号を覚えたあとに効いてくる話をまとめました。国際的な取り決めと、日本の無線局運用規則にもとづいています。</p>
+    <p class="lead">符号を覚えたあとに役立つ決まりごとです。</p>
 
     <h3>長さは「短点いくつ分」ですべて決まる</h3>
-    <p>モールスに絶対の秒数はありません。短点1つを1単位として、そこからの比だけが決まっています。だから速い人も遅い人も、比さえ守れば通じます。</p>
+    <p>決まっているのは秒数ではなく比です。短点1つを1単位として数えるので、速さが違っても比を守れば通じます。</p>
     <table class="unit">
       <tr><th>短点（トン）</th><td><span class="ba" style="width:14px;background:var(--dot)"></span>1単位</td></tr>
       <tr><th>長点（ツー）</th><td><span class="ba" style="width:42px;background:var(--dash)"></span>3単位</td></tr>
@@ -523,7 +523,7 @@ section.card,section#read.card,section#list.card{background:none;border:0;border
       <tr><th>文字と文字の間</th><td>3単位</td></tr>
       <tr><th>語と語の間</th><td>7単位</td></tr>
     </table>
-    <p>受け手は音の長さと<b>間の長さ</b>だけを頼りに区切ります。文字の切れ目を教える合図はありません。だから間を正確に取ることが、速く打つことよりも大事だと言われます。</p>
+    <p>速さより<b>間の長さ</b>を正確に。文字の切れ目を知らせる合図はなく、受け手は音と間の長さだけで区切ります。</p>
 
     <h3>速さは「1分間に何語」で表す</h3>
     <p>基準になるのは <b>PARIS</b> という語です。語の後ろの空きまで入れるとちょうど50単位になるので、これを物差しに使います。1分間にPARISを20回送れる速さが20語/分（20&nbsp;WPM）で、このとき1単位は60ミリ秒です。</p>
@@ -537,7 +537,7 @@ section.card,section#read.card,section#list.card{background:none;border:0;border
       <li><b>コッホ法</b>いきなり目標の速さで、ただし2文字だけから始めます。9割取れるようになったら1文字ずつ足していく方法です。</li>
       <li><b>ファーンズワース</b>符号そのものは速いまま送り、文字と文字の間だけを広げます。「文字20語/分・全体5語/分」のような設定から始めます。</li>
     </ul>
-    <p>どちらも<b>ゆっくり打って覚えない</b>ための工夫です。遅い符号で覚えると、音の形ではなく点と線を数えるくせがつき、速くしたときに聞き取れなくなります。</p>
+    <p>どちらも<b>ゆっくり打って覚えない</b>ための工夫です。遅い符号で覚えると点と線を数えるくせがつき、速くすると聞き取れなくなります。</p>
 
     <h3>知っておくと通じる合図</h3>
     <ul class="defs">
@@ -551,7 +551,7 @@ section.card,section#read.card,section#list.card{background:none;border:0;border
     <p>カタカナを送るための符号が別に決められています。イロハ順に欧文の符号を当てはめて作られたもので、無線局運用規則にも定めがあります。ただし文字の出やすさを考えずに割り当てたので、よく使う文字に短い符号が来ておらず、効率は欧文に劣ります。<b>ヘ</b>が<code>・</code>、<b>ム</b>が<code>－</code>です。</p>
 
     <h3>いまの日本での位置づけ</h3>
-    <p>アマチュア無線の国家試験からは、モールスの実技試験が第三級で2005年、第一級・第二級で2011年10月になくなりました。ただし試験がなくなっただけで、モールス符号を理解しているかは筆記で今も問われますし、電波の届きにくい条件でも通じる手段としてCW（モールス通信）は現役です。</p>
+    <p>実技試験はなくなりましたが、モールスは今も現役です。アマチュア無線の国家試験では、実技が第三級で2005年、第一級・第二級で2011年10月に廃止されました。それでも符号の理解は筆記で問われ、電波の届きにくい条件でも通じるCW（モールス通信）は使われ続けています。</p>
 
     <a class="more" href="/hajimekata/">読み物：モールス信号のはじめ方 →</a>
 
@@ -559,8 +559,7 @@ section.card,section#read.card,section#list.card{background:none;border:0;border
   </section>
 </main>
 
-<p class="caution">このページは仕組みを学ぶための教材です。実際に電波を出して交信するには、
-  アマチュア無線技士の資格と無線局の免許が必要です。</p>
+<p class="caution">このページは学ぶための教材です。電波を出して交信するには、アマチュア無線技士の資格と無線局の免許が必要です。</p>
 
 <script src="/m.js?v=1"></script>
 <script>
