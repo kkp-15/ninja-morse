@@ -272,6 +272,10 @@ footer{text-align:center;padding:22px 14px 26px;font-size:14px;color:var(--ink-s
       background:var(--paper);border-top:1px solid var(--line);
       padding:8px 12px calc(8px + env(safe-area-inset-bottom));
       box-shadow:0 -6px 18px rgba(74,59,40,.13)}
+    /* 電鍵の台座は「打つ・送る」の欄にいる間だけ出す（2026-10-21）。
+       下の欄（読む・一覧表）を読んでいる間に画面の下をふさがないように。 */
+    .keydock{transition:transform .2s ease,visibility 0s}
+    .keydock.dock-off{visibility:hidden;transform:translateY(110%);transition:transform .2s ease,visibility 0s .2s}
     .keydock .keybtn{margin:0 auto}
     .keydock .auto{margin-top:6px}
     /* 台座の高さぶんだけ下に余白を作る（広告や本文が隠れないように）。
@@ -431,7 +435,7 @@ section.card,section#read.card,section#list.card{background:none;border:0;border
 
 <main>
 
-  <section class="card">
+  <section class="card" id="send">
     <h2>打つ・送る</h2>
     <p class="legend2"><b><i class="d"></i>短い線</b>＝トン　<b><i class="h"></i>長い線</b>＝ツー　
     たどった先の丸がその文字。<b>4打目より先</b>は<a href="#list">一覧表</a>へ。</p>
@@ -1090,6 +1094,16 @@ $('dUse').onclick = () => {
   if (window.ResizeObserver) new ResizeObserver(apply).observe(dock);
   addEventListener('resize', apply);
   addEventListener('orientationchange', () => setTimeout(apply, 200));
+})();
+
+/* 電鍵の台座は「打つ・送る」の欄が画面に入っている間だけ出す（スマホで下に固定しているときだけ効く） */
+(function dockShow(){
+  const dock = $('keydock'), send = $('send');
+  if (!dock || !send || !window.IntersectionObserver) return;
+  new IntersectionObserver(es => {
+    const on = es[es.length - 1].isIntersecting;
+    dock.classList.toggle('dock-off', !on);
+  }, { rootMargin: '0px 0px -30% 0px' }).observe(send);
 })();
 
 (function wireKey(){
