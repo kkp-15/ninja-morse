@@ -393,6 +393,14 @@ details>summary{color:var(--k-sumi);text-decoration:underline;text-decoration-co
 @media(max-width:700px){.keydock{background:var(--k-surface);border-top:var(--k-bw-s) solid var(--k-sumi);box-shadow:none}}
 /* 段の箱（3px のふち＋影）をやめて罫線1本と余白に（入れ物に影は付けない） */
 section.card,section#read.card,section#list.card{background:none;border:0;border-top:var(--k-bw-s) solid var(--k-sumi);border-radius:0;box-shadow:none;padding:16px 0 6px;margin-bottom:22px}
+/* 2026-10-21 遊ぶ画面・結果画面の読みやすさ（実際に遊んで測った分） */
+/* 送るボタンの見た目がスマホ幅の中にしかなく、PCでは素のリンク（青字・13px）になっていた */
+.shr{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.shr a,.shr button{display:block;text-align:center;text-decoration:none;font:inherit;font-weight:800;font-size:14px;border-radius:10px;padding:10px 8px;cursor:pointer;border:1px solid transparent}
+#shX{background:#000;color:#fff}
+#shL{background:#0b873e;color:#fff}
+#shC{grid-column:1 / -1;background:#fff;color:var(--ink);border-color:var(--line)}
+.shr[hidden]{display:none}
 </style>
 <!-- kkp-rel-d4:start -->
 <style id="kkp-rel-d4">
