@@ -420,6 +420,20 @@ section.card,section#read.card,section#list.card{background:none;border:0;border
 #shL{background:#0b873e}
 .more,a.more{color:var(--k-sumi)}
 /* /読みやすさ */
+/* 本の紹介（Amazonアソシエイト・2026-11-04） */
+.bk{margin-top:26px}
+.bk>h2{margin:0;padding-bottom:4px;border-bottom:2px solid var(--k-sumi);font-size:18px;font-weight:800}
+.bk-pr{margin:8px 0 2px;font-size:12px;line-height:1.6;color:var(--k-text-2)}
+.bk-pr span{display:inline-block;margin-right:6px;padding:0 5px;border:1.5px solid var(--k-text-2);border-radius:3px;font-weight:800}
+.bk-list{margin:0;padding:0;list-style:none}
+.bk-list li{border-bottom:1px solid var(--k-line-soft)}
+.bk-list a{display:flex;flex-direction:column;justify-content:center;min-height:52px;padding:8px 26px 8px 0;position:relative;text-decoration:none;color:var(--k-sumi)}
+.bk-list b{font-size:15px;font-weight:800;line-height:1.45}
+.bk-list span{font-size:13px;line-height:1.5;color:var(--k-text-2)}
+.bk-list em{font-style:normal;font-weight:800;color:var(--k-sumi)}
+.bk-list a::after{content:"→";position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--k-orange)}
+.bk-ku{margin:8px 0 0;font-size:13px;line-height:1.7;color:var(--k-text-2)}
+.bk-ku a{font-weight:800;color:var(--k-sumi)}
 </style>
 <!-- kkp-rel-d4:end -->
 </head>
@@ -557,6 +571,15 @@ section.card,section#read.card,section#list.card{background:none;border:0;border
     <a class="more" href="/hajimekata/">読み物：モールス信号のはじめ方 →</a>
 
     <p class="src">出典：国際電気通信連合 ITU-R M.1677-1「International Morse code」／総務省 無線局運用規則 別表第一号（第十二条関係）／総務省報道資料「アマチュア無線技士国家試験に係る試験科目の見直し」</p>
+  </section>
+  <!-- 本の紹介（Amazonアソシエイト・2026-11-04。価格は書かない・読み放題は置いた日に商品ページで確認） -->
+  <section class="bk bk-wrap" aria-labelledby="bk-h">
+    <h2 id="bk-h">モールスとアマチュア無線の本</h2>
+    <p class="bk-pr"><span>PR</span>Amazonのリンクです。Amazonのアソシエイトとして、web忍者の砦は適格販売により収入を得ています。</p>
+    <ul class="bk-list">
+      <li><a href="https://www.amazon.co.jp/dp/4789852806?tag=kkp15-22" target="_blank" rel="nofollow sponsored noopener" onclick="if(typeof gtag==='function')gtag('event','aff_amazon_book')"><b>モールス通信【オンデマンド版】</b><span>CQ ham radio編集部</span></a></li>
+      <li><a href="https://www.amazon.co.jp/dp/4806918695?tag=kkp15-22" target="_blank" rel="nofollow sponsored noopener" onclick="if(typeof gtag==='function')gtag('event','aff_amazon_book')"><b>はじめての3級・4級アマチュア無線技士試験 テキスト&amp;用語集</b><span>吉川忠久</span></a></li>
+    </ul>
   </section>
 </main>
 
