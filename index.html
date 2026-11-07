@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<!--
+═══════════ 開発メモ ═══════════
+モールス信号を「分岐する木」として辿るデコーダー。音を解析する装置ではなく、
+仕組みを直感的に理解するための学習ツール（元ネタの装置と同じ考え方）。
+
+■ 設計ルール
+- 単一HTML / フレームワークなし / Cloudflare Pages
+- 点=●で左へ、線=■で右へ。深さ1〜4がちょうどA〜Zの26文字になる
+- MORSE は正本。木はここから生成するので、表と木が食い違うことはない
+- UIに装飾絵文字を使わない
+════════════════════════════
+-->
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="msvalidate.01" content="EF6E7C7B123A3218DAE3B152F5B0764D" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#F08A3C">
+<title>モールス信号を送り合う｜打って送って、届いた符号は読めるページ</title>
+<meta name="description" content="モールス信号でメッセージを送り合える無料サイト。電鍵で打つか文字を入力すると符号ができ、音を確かめてXやLINEで送れます。届いた符号は貼るだけで文に戻り、そのまま返事も作れます。点と線をたどる分岐図つきで、初めてでも仕組みが分かります。登録不要。">
+<link rel="canonical" href="https://morse.kkpwebninja.com/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="モールス信号が届いています｜開くと文と音になります">
+<meta property="og:description" content="届いた符号を開くだけで、その場で文になります。信号音も鳴らせて、そのまま返事も作れます。点と線をたどる分岐図つきなので、初めてでも打てます。">
+<meta property="og:url" content="https://morse.kkpwebninja.com/">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon.png?v=2">
+<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png?v=2">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
+<meta property="og:site_name" content="モールス信号の分岐表">
+<meta property="og:image" content="https://morse.kkpwebninja.com/ogp.png?v=20260904g">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://morse.kkpwebninja.com/ogp.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "モールス信号を送り合う",
+  "url": "https://morse.kkpwebninja.com/",
+  "description": "モールス信号で送り合える無料サイト。打った符号をXやLINEで送れて、届いた符号は貼るだけで読めます。分岐図で仕組みも分かります。",
+  "applicationCategory": "GameApplication",
+  "operatingSystem": "Web",
+  "offers": {"@type":"Offer","price":"0","priceCurrency":"JPY"},
+  "author": {"@type":"Organization","name":"web忍者の砦"}
+}
+</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2LM85GJN0L"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-2LM85GJN0L');
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1298304917726270" crossorigin="anonymous"></script>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+<!-- 筆と太字はこのページで使う字だけ（python3 ~/test/kkp-kit/fonttext.py index.html --extra "一覧表の英字・カナ・記号"） -->
+<link href="https://fonts.googleapis.com/css2?family=Yuji+Syuku&family=RocknRoll+One&display=swap&text=%21%22%24%26%27%28%29%2B%2C-.%2F0123456789%3A%3B%3D%3F%40ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdeijklnoprstw%C2%A9%C2%B7%E2%80%94%E2%86%92%E3%80%81%E3%80%82%E3%80%8C%E3%80%8D%E3%81%82%E3%81%84%E3%81%86%E3%81%88%E3%81%8A%E3%81%8B%E3%81%8C%E3%81%8D%E3%81%8F%E3%81%91%E3%81%92%E3%81%93%E3%81%94%E3%81%95%E3%81%97%E3%81%98%E3%81%99%E3%81%9A%E3%81%9B%E3%81%9D%E3%81%9F%E3%81%A0%E3%81%A1%E3%81%A3%E3%81%A4%E3%81%A5%E3%81%A6%E3%81%A7%E3%81%A8%E3%81%A9%E3%81%AA%E3%81%AB%E3%81%AE%E3%81%AF%E3%81%B0%E3%81%B3%E3%81%B6%E3%81%B8%E3%81%B9%E3%81%BB%E3%81%BE%E3%81%BF%E3%82%80%E3%82%81%E3%82%82%E3%82%84%E3%82%86%E3%82%87%E3%82%88%E3%82%89%E3%82%8A%E3%82%8B%E3%82%8C%E3%82%8D%E3%82%8F%E3%82%92%E3%82%93%E3%82%9B%E3%82%9C%E3%82%A1%E3%82%A2%E3%82%A4%E3%82%A6%E3%82%A7%E3%82%A8%E3%82%AA%E3%82%AB%E3%82%AD%E3%82%AF%E3%82%B1%E3%82%B2%E3%82%B3%E3%82%B5%E3%82%B7%E3%82%B8%E3%82%B9%E3%82%BA%E3%82%BB%E3%82%BD%E3%82%BF%E3%83%81%E3%83%83%E3%83%84%E3%83%86%E3%83%88%E3%83%89%E3%83%8A%E3%83%8B%E3%83%8C%E3%83%8D%E3%83%8E%E3%83%8F%E3%83%90%E3%83%92%E3%83%94%E3%83%95%E3%83%97%E3%83%98%E3%83%99%E3%83%9A%E3%83%9B%E3%83%9C%E3%83%9D%E3%83%9E%E3%83%9F%E3%83%A0%E3%83%A1%E3%83%A2%E3%83%A3%E3%83%A4%E3%83%A5%E3%83%A6%E3%83%A8%E3%83%A9%E3%83%AA%E3%83%AB%E3%83%AC%E3%83%AD%E3%83%AF%E3%83%B0%E3%83%B1%E3%83%B2%E3%83%B3%E3%83%BB%E3%83%BC%E4%B8%80%E4%B8%89%E4%B8%8A%E4%B8%AD%E4%B8%B8%E4%BA%8B%E4%BA%8C%E4%BA%A4%E4%BA%BA%E4%BB%8A%E4%BB%95%E4%BB%B6%E4%BC%9D%E4%BD%8D%E4%BD%93%E4%BD%95%E4%BD%9C%E4%BD%BF%E4%BF%82%E4%BF%A1%E5%85%88%E5%85%8D%E5%85%A5%E5%85%A8%E5%85%B8%E5%87%BA%E5%88%86%E5%88%87%E5%88%A5%E5%89%87%E5%89%8D%E5%89%B2%E5%8A%9B%E5%8A%A3%E5%8A%B9%E5%8B%95%E5%8B%99%E5%8C%BA%E5%8D%81%E5%8D%94%E5%8D%98%E5%8F%96%E5%8F%97%E5%8F%B0%E5%8F%B7%E5%90%88%E5%90%8C%E5%91%8A%E5%91%BC%E5%92%8C%E5%93%A1%E5%95%8F%E5%9B%9E%E5%9B%B3%E5%9B%BD%E5%9F%BA%E5%A0%B1%E5%A2%83%E5%A3%AB%E5%A4%89%E5%A4%A7%E5%A4%AB%E5%A7%8B%E5%AD%97%E5%AD%A6%E5%AE%88%E5%AE%9A%E5%AE%9F%E5%AE%B6%E5%AF%BE%E5%B0%91%E5%B1%80%E5%B1%8A%E5%B2%90%E5%B7%A5%E5%B7%AE%E5%B8%83%E5%B9%B4%E5%BA%83%E5%BA%A6%E5%BD%93%E5%BD%A2%E5%BD%B9%E5%BE%85%E5%BE%8C%E5%BF%85%E5%BF%8D%E5%BF%9C%E6%88%BB%E6%89%8B%E6%89%93%E6%8A%80%E6%8A%BC%E6%8D%A8%E6%95%99%E6%95%B0%E6%96%87%E6%96%99%E6%96%B9%E6%97%A5%E6%9B%BF%E6%9C%88%E6%9C%AC%E6%9D%90%E6%9D%A1%E6%9D%A5%E6%A0%BC%E6%A8%99%E6%AC%A7%E6%AD%A3%E6%AE%B5%E6%AF%94%E6%B0%97%E6%B1%BA%E6%B3%95%E6%B3%A2%E6%B6%88%E6%BA%96%E7%82%B9%E7%84%A1%E7%89%A9%E7%8E%87%E7%8F%BE%E7%90%86%E7%94%A8%E7%94%BB%E7%9A%84%E7%9B%AE%E7%9B%B4%E7%9C%81%E7%9F%A5%E7%9F%AD%E7%9F%B3%E7%A0%A6%E7%A2%BA%E7%A7%91%E7%A7%92%E7%A9%BA%E7%AC%A6%E7%AC%AC%E7%AD%86%E7%AD%94%E7%B4%9A%E7%B5%82%E7%B5%84%E7%B5%B6%E7%B6%9A%E7%B7%8F%E7%B7%9A%E7%BD%AE%E8%80%83%E8%80%85%E8%81%9E%E8%8B%B1%E8%91%89%E8%A1%A8%E8%A6%81%E8%A6%8B%E8%A6%8F%E8%A6%9A%E8%A6%A7%E8%A7%A3%E8%A8%80%E8%A8%82%E8%A8%98%E8%A8%AD%E8%A8%B1%E8%A9%A6%E8%A9%B1%E8%AA%9E%E8%AA%AD%E8%AA%B0%E8%B2%BC%E8%B3%87%E8%B6%B3%E9%80%81%E9%80%9A%E9%80%9F%E9%80%A3%E9%81%85%E9%81%8A%E9%81%8B%E9%81%93%E9%81%95%E9%85%8D%E9%8D%B5%E9%95%B7%E9%96%8B%E9%96%93%E9%96%A2%E9%9A%9B%E9%9B%BB%E9%9D%A2%E9%9F%B3%E9%A0%86%E9%A0%BC%E9%A1%8C%E9%A8%93%E9%B3%B4%EF%BC%88%EF%BC%89%EF%BC%8D%EF%BC%8F%EF%BC%9A%EF%BC%9D%EF%BD%9C" rel="stylesheet">
+<!-- 共通部品 D4（kkp-kit を kit/ にコピーしたもの。中は手で直さず kkp-kit 側で直して sync.sh） -->
+<link rel="stylesheet" href="/kit/kit.css?v=373af14">
+<script src="/kit/kit.js?v=373af14" defer></script>
+<style>
+:root{
+  --orange:#F08A3C; --orange-deep:#E06A20; --cream:#FBEFDC; --cream-deep:#F7E3C6;
+  --ink:#4A3B28; --ink-soft:#8A7560; --line:#EFD9B6; --paper:#FFFCF7;
+  --dot:#3EB8CE; --dash:#F0615C; --ok:#5BB97E;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN",system-ui,sans-serif;
+  line-height:1.7;-webkit-text-size-adjust:100%}
+header{background:linear-gradient(135deg,var(--orange),var(--orange-deep));color:#fff;
+  padding:14px 16px;text-align:center}
+header h1{margin:0;font-size:18px;font-weight:800;letter-spacing:.01em}
+header p{margin:4px 0 0;font-size:14px;opacity:.95}
+main{max-width:820px;margin:0 auto;padding:10px 12px 28px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:12px}
+h2{font-size:16px;margin:0 0 10px;font-weight:800}
+
+/* 現在の入力 */
+.now{background:var(--cream);border:2px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+.sig{min-height:44px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.sig .m{display:inline-block}
+.sig .m.d{width:20px;height:20px;border-radius:50%;background:var(--dot)}
+.sig .m.h{width:34px;height:20px;border-radius:6px;background:var(--dash)}
+.sig .ph{color:var(--ink-soft);font-size:14px}
+.res{font-size:52px;font-weight:800;line-height:1.15;margin:4px 0 0;min-height:60px}
+.res.none{font-size:15px;font-weight:700;color:var(--ink-soft);min-height:60px;
+  display:flex;align-items:center;justify-content:center}
+.auto{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:8px;font-size:14px;color:var(--ink-soft);flex-wrap:wrap}
+.auto label{display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:700;color:var(--ink)}
+.auto input{width:17px;height:17px;accent-color:var(--orange)}
+.bar{height:5px;background:var(--cream-deep);border-radius:99px;overflow:hidden;margin-top:9px}
+.bar>i{display:block;height:100%;width:0;background:var(--orange);border-radius:99px}
+.bar.off{visibility:hidden}
+
+/* 操作 */
+/* 電鍵。押している長さで点と線が決まる（実物と同じ考え方） */
+.key{margin-top:10px;text-align:center}
+.keybtn{width:100%;max-width:360px;padding:11px 12px 12px;border:0;border-radius:20px;cursor:pointer;
+  background:linear-gradient(180deg,#5A4632,#3A2E20);color:#fff;font:inherit;font-weight:800;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 8px 0 #291F15, 0 14px 24px rgba(74,59,40,.28);
+  touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+  transition:transform .05s, box-shadow .05s}
+.keybtn:active,.keybtn.down{transform:translateY(6px);box-shadow:0 2px 0 #291F15, 0 6px 12px rgba(74,59,40,.3)}
+/* 押せると分かるように：つまみが呼吸し、まわりに波紋が出る。
+   触れたら止まる（押し方が分かった人には邪魔なので）。 */
+.keybtn .knob{width:52px;height:52px;border-radius:50%;position:relative;
+  background:radial-gradient(circle at 35% 30%,#FFD9A8,#D9903F 60%,#A8641F);
+  box-shadow:inset 0 -3px 6px rgba(0,0,0,.3), 0 0 0 0 rgba(255,214,150,.5);
+  animation:knobPulse 2.1s ease-in-out infinite}
+.keybtn .knob::after{content:"";position:absolute;inset:-10px;border-radius:50%;
+  border:2px solid rgba(255,214,150,.55);animation:knobRing 2.1s ease-out infinite}
+.keybtn.down .knob,.keybtn.used .knob{animation:none;box-shadow:inset 0 -3px 6px rgba(0,0,0,.3)}
+.keybtn.down .knob::after,.keybtn.used .knob::after{display:none}
+@keyframes knobPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes knobRing{0%{transform:scale(.85);opacity:.9}70%{transform:scale(1.25);opacity:0}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.keybtn .knob{animation:none}.keybtn .knob::after{display:none}}
+  .mkind{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+  .mkind button{border:1px solid var(--line);background:#fff;color:var(--ink-soft);font:inherit;
+    font-weight:700;font-size:14px;border-radius:9px;padding:7px 4px;cursor:pointer}
+  .mkind button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+  .decout{min-height:50px;border:1px solid var(--line);border-radius:10px;padding:11px;margin-top:9px;
+    background:var(--cream);font-size:20px;font-weight:800;letter-spacing:.06em;line-height:1.6;word-break:break-word}
+  .decout .ph{font-size:14px;font-weight:400;color:var(--ink-soft);letter-spacing:0}
+  .decout .bad{color:#B4451A;font-size:14px;font-weight:700;letter-spacing:0;margin-top:5px}
+  /* 教材である旨の注意。フッターではなく本文の締めとして置く。 */
+  /* 作った符号を、送る前にまず聞く。ここが一番使われるので単独で大きく置く。 */
+  .hear{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;
+    margin-top:9px;border:0;border-radius:12px;padding:13px 12px;cursor:pointer;
+    font:inherit;font-weight:800;font-size:15px;color:#fff;
+    background:linear-gradient(180deg,var(--orange),var(--orange-deep));
+    box-shadow:0 3px 0 #C05A18}
+  .hear:active{transform:translateY(2px);box-shadow:0 1px 0 #C05A18}
+  .hear .ico{width:17px;height:17px;display:block;background:no-repeat center/contain;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round'><path d='M4 9v6h4l5 4V5L8 9H4z' fill='white'/><path d='M17 8.5a5 5 0 010 7M20 6a9 9 0 010 12'/></svg>")}
+  .outbtns{margin-top:8px}
+  /* 分岐図の読み方。図の中に小さく置くと読めないので、図の上に出す。 */
+  .legend2{margin:0 0 7px;font-size:14px;line-height:1.75;color:var(--ink-soft)}
+  .legend2 b{color:var(--ink);font-weight:800}
+  .legend2 i{display:inline-block;vertical-align:middle;margin-right:4px}
+  .legend2 i.d{width:9px;height:9px;border-radius:99px;background:var(--dot)}
+  .legend2 i.h{width:24px;height:9px;border-radius:3px;background:var(--dash)}
+  .legend2 a{color:#B4451A}
+  h2 .h2sub{display:block;font-size:14px;font-weight:600;color:var(--ink-soft);margin-top:2px;letter-spacing:0}
+  .deep .dn a{color:#B4451A;font-weight:800}
+  .caution{max-width:820px;margin:0 auto 10px;padding:0 12px;
+    font-size:14px;color:var(--ink-soft);line-height:1.8;text-align:center}
+  /* 打ち方の説明。ボタンの中に置くと押す場所が狭くなるので題の下へ小さく出す。 */
+  /* 押している長さを、つまみを囲む輪の伸びで見せる。文字を読むより速く分かる。
+     2単位で一周し、そこを越えると線の色に変わる。 */
+  .kwrap{position:relative;display:grid;place-items:center;width:76px;height:76px}
+  .ring{position:absolute;inset:0;border-radius:50%;pointer-events:none;
+    background:conic-gradient(var(--rc,#3EB8CE) calc(var(--p,0)*1turn), rgba(255,255,255,.14) 0);
+    -webkit-mask:radial-gradient(circle, transparent 30px, #000 31px);
+    mask:radial-gradient(circle, transparent 30px, #000 31px);
+    opacity:0;transition:opacity .08s}
+  .keybtn.down .ring{opacity:1}
+  /* 音を消すつまみ。常時鳴る作りなので、消す手段がないと電車の中などで困る。 */
+  .key{position:relative}
+  .mute{position:absolute;top:10px;right:14px;width:34px;height:34px;display:grid;place-items:center;cursor:pointer;z-index:3}
+  .mute input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+  .mute span{width:20px;height:20px;display:block;background:no-repeat center/contain;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'><path d='M4 9v6h4l5 4V5L8 9H4z' fill='white'/><path d='M17 8.5a5 5 0 010 7M20 6a9 9 0 010 12'/></svg>");opacity:.85}
+  .mute input:not(:checked) + span{
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'><path d='M4 9v6h4l5 4V5L8 9H4z' fill='white'/><path d='M17 9l5 6M22 9l-5 6'/></svg>");opacity:.5}
+  .kstat{font-size:14px;font-weight:700;letter-spacing:.02em;opacity:.9;min-height:18px}
+.keybtn.down .kstat{opacity:1}
+.pad{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.pad button{border:0;border-radius:13px;padding:9px 8px;font:inherit;font-weight:800;
+  font-size:14px;color:#fff;cursor:pointer;min-height:52px;display:flex;
+  flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.pad .row1{display:flex;align-items:center;gap:9px}
+.pad .dir{font-size:14px;font-weight:700;opacity:.9;letter-spacing:.03em}
+.pad .bd{background:var(--dot)} .pad .bh{background:var(--dash)}
+.pad button:active{transform:translateY(1px)}
+.pad .icon{display:inline-block}
+.pad .icon.d{width:16px;height:16px;border-radius:50%;background:#fff}
+.pad .icon.h{width:28px;height:16px;border-radius:5px;background:#fff}
+.sub{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+.sub button{border:2px solid var(--line);background:#fff;color:var(--ink);border-radius:12px;
+  padding:11px 6px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;min-height:46px}
+.sub button:disabled{opacity:.4;cursor:not-allowed}
+.sub .go{border-color:var(--ok);color:#2f6b46}
+
+/* 出力 */
+.out{margin-top:12px;background:var(--cream);border-radius:12px;padding:11px;min-height:52px;
+  font-size:22px;font-weight:800;letter-spacing:.06em;word-break:break-all}
+.out .ph{font-size:14px;font-weight:500;color:var(--ink-soft);letter-spacing:0}
+.outbtns{display:flex;gap:8px;margin-top:8px}
+.outbtns button{flex:1;border:2px solid var(--line);background:#fff;color:var(--ink);
+  border-radius:11px;padding:9px;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+
+/* 木 */
+/* 縦型の経路図。深さ4の木は末端が16個あり横に収まらないので、
+   辿っている道すじと次の2択だけを縦に見せる。全体図は下に別枠で置く。 */
+.pv{background:var(--cream);border:2px solid var(--line);border-radius:14px;padding:12px 8px}
+.pv-step{display:flex;align-items:center;justify-content:center;gap:9px;min-height:30px}
+.pv-sign{width:34px;text-align:right;font-size:14px;font-weight:800}
+.pv-sign .s{display:inline-block;vertical-align:middle}
+.pv-sign .s.d{width:13px;height:13px;border-radius:50%;background:var(--dot)}
+.pv-sign .s.h{width:24px;height:13px;border-radius:4px;background:var(--dash)}
+.pv-node{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:16px;background:#fff;border:2px solid var(--line);color:var(--ink)}
+.pv-node.cur{background:var(--orange);border-color:var(--orange-deep);color:#fff;
+  box-shadow:0 0 0 5px rgba(240,138,60,.2);width:62px;height:62px;font-size:32px}
+.pv-node.cur.root{width:44px;height:44px;font-size:14px}
+.pv-none{text-align:center;font-size:14px;font-weight:700;color:var(--ink-soft);margin-top:7px}
+.pv-node.root{font-size:14px}
+.pv-pad{width:34px}
+.pv-skip{font-size:14px;font-weight:700;color:var(--ink-soft);background:#fff;
+  border:1px dashed var(--line);border-radius:99px;padding:3px 10px}
+.pv-line{height:12px;width:2px;background:var(--line);margin:0 auto}
+.pv-kids{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.kid{border-radius:11px;padding:8px 6px;text-align:center;border:2px solid;background:#fff}
+.kid.d{border-color:var(--dot);background:#EAF7FA;color:#1d7d90}
+.kid.h{border-color:var(--dash);background:#FDEDEC;color:#B23A36}
+.kid.no{border-color:var(--line);color:var(--ink-soft);background:#fff}
+.kid .k1{font-size:14px;font-weight:700}
+.kid .k2{font-size:24px;font-weight:800;line-height:1.2}
+.treewrap{background:var(--cream);border:2px solid var(--line);border-radius:14px;padding:5px 4px}
+.tree svg{display:block;width:100%;height:auto}
+.deep{margin-top:7px;padding:8px 10px;background:#fff;border:2px solid var(--line);border-radius:11px;
+  text-align:center;font-size:14px;font-weight:700;color:var(--ink)}
+.deep b{color:var(--orange-deep);font-size:17px}
+.deep .xm{display:inline-block;vertical-align:middle;margin:0 2px}
+.deep .xm.d{width:11px;height:11px;border-radius:50%;background:var(--dot)}
+.deep .xm.h{width:20px;height:11px;border-radius:3px;background:var(--dash)}
+.deep .dn{display:block;font-size:14px;font-weight:500;color:var(--ink-soft);margin-top:3px}
+.tree svg{display:block}
+.hint{font-size:14px;color:var(--ink-soft);margin:6px 0 0}
+
+/* 一覧 */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:7px}
+.cell{border:1px solid var(--line);border-radius:10px;padding:7px 5px;text-align:center;background:#fff}
+.cell b{display:block;font-size:17px}
+.cell span{font-size:14px;color:var(--ink-soft);letter-spacing:.08em;white-space:nowrap}
+.tabs{display:flex;gap:8px;margin-bottom:10px}
+.tabs button{flex:1;border:2px solid var(--line);background:#fff;color:var(--ink);
+  border-radius:11px;padding:9px;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+.tabs button.on{background:var(--orange);border-color:var(--orange);color:#fff}
+
+/* 逆引き */
+.rev input{width:100%;border:2px solid var(--line);border-radius:12px;padding:12px;
+  font:inherit;font-size:16px;background:#fff}
+.revout{margin-top:10px;background:var(--cream);border-radius:12px;padding:11px;min-height:48px;
+  font-size:17px;letter-spacing:.05em;word-break:break-all}
+.revout .w{display:inline-block;margin:0 9px 6px 0;white-space:nowrap}
+.revout .w i{font-style:normal;font-size:14px;color:var(--ink-soft);display:block;text-align:center}
+
+.note{font-size:14px;color:var(--ink-soft);margin:8px 0 0}
+/* 広告。読み込まれるまで高さを空けておき、記事が飛び跳ねないようにする。 */
+.ad-slot{margin:6px 0 14px;padding:10px 0 12px;text-align:center;background:transparent;
+    border-top:1px dashed var(--line);border-bottom:1px dashed var(--line)}
+.ad-label{font-size:10.5px;letter-spacing:.04em;color:var(--ink-soft);margin-bottom:5px}
+.ad-slot ins.adsbygoogle{display:block;width:300px;height:250px;margin:0 auto}
+@media(min-width:760px){ .ad-slot ins.adsbygoogle{width:336px;height:280px} }
+footer{text-align:center;padding:22px 14px 26px;font-size:14px;color:var(--ink-soft)}
+@media(max-width:699px){
+  /* 経路図と電鍵を1画面に収めるための詰め。数字・記号（深さ5以上）でも入るようにする */
+  header{padding:11px 16px}
+  main{padding:10px 12px 40px}
+  /* ===== 電鍵の台座 =====
+     スマホでは画面の下に固定する。親指が届く位置に置くと同時に、
+     打っている間も分岐図が見えたままになるのが狙い。 */
+  .keydock{margin-bottom:14px}
+  @media(max-width:700px){
+    .keydock{position:fixed;left:0;right:0;bottom:0;z-index:60;margin:0;
+      background:var(--paper);border-top:1px solid var(--line);
+      padding:8px 12px calc(8px + env(safe-area-inset-bottom));
+      box-shadow:0 -6px 18px rgba(74,59,40,.13)}
+    /* 電鍵の台座は「打つ・送る」の欄にいる間だけ出す（2026-10-21）。
+       下の欄（読む・一覧表）を読んでいる間に画面の下をふさがないように。 */
+    .keydock{transition:transform .2s ease,visibility 0s}
+    .keydock.dock-off{visibility:hidden;transform:translateY(110%);transition:transform .2s ease,visibility 0s .2s}
+    .keydock .keybtn{margin:0 auto}
+    .keydock .auto{margin-top:6px}
+    /* 台座の高さぶんだけ下に余白を作る（広告や本文が隠れないように）。
+       高さはJSで実測して --dock に入れている。 */
+    body{padding-bottom:var(--dock,200px)}
+  }
+  /* ===== 送りあうカード ===== */
+  .mtabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+  .mtabs button{border:1px solid var(--line);background:#fff;color:var(--ink-soft);font:inherit;
+    font-weight:800;font-size:14px;border-radius:10px;padding:8px 6px;cursor:pointer}
+  .mtabs button[aria-pressed="true"]{background:var(--cream);border-color:var(--orange);color:var(--ink)}
+  .mkind{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+  .mkind button{border:1px solid var(--line);background:#fff;color:var(--ink-soft);font:inherit;
+    font-weight:700;font-size:14px;border-radius:9px;padding:6px 4px;cursor:pointer}
+  .mkind button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+  .revout .w.ng{color:#B4451A}
+  .decout{min-height:44px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+    background:var(--cream);font-size:19px;font-weight:800;letter-spacing:.06em;line-height:1.6;word-break:break-word}
+  .decout .ph{font-size:14px;font-weight:400;color:var(--ink-soft);letter-spacing:0}
+  .decout .bad{color:#B4451A;font-size:14px;font-weight:700;letter-spacing:0}
+  .mact{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+  .mact button{flex:1 1 auto;border:1px solid var(--line);background:#fff;color:var(--ink);font:inherit;
+    font-weight:800;font-size:14px;border-radius:10px;padding:9px 10px;cursor:pointer;min-width:8em}
+  .mact button:disabled{opacity:.45;cursor:not-allowed}
+  .mnote{font-size:14px;color:var(--ink-soft);margin:9px 0 0;line-height:1.7}
+  .shr{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+  .shr a,.shr button{display:block;text-align:center;text-decoration:none;font:inherit;font-weight:800;
+    font-size:14px;border-radius:10px;padding:10px 8px;cursor:pointer;border:1px solid transparent}
+  #shL{background:#06C755;color:#fff}
+  #shC{background:#fff;color:var(--ink);border-color:var(--line)}
+  /* ===== 知識のセクション ===== */
+  .know h3{font-size:15px;margin:18px 0 6px}
+  .know h3:first-of-type{margin-top:4px}
+  .know p{margin:0 0 8px;line-height:1.75;font-size:14px}
+  .know .lead{color:var(--ink-soft)}
+  .unit{width:100%;border-collapse:collapse;font-size:14px;margin:2px 0 10px}
+  .unit th,.unit td{border:1px solid var(--line);padding:6px 8px;text-align:left}
+  .unit th{background:var(--cream);font-weight:800;white-space:nowrap}
+  .unit td:last-child{text-align:right;white-space:nowrap;font-weight:800}
+  .unit .ba{display:inline-block;height:9px;border-radius:99px;vertical-align:middle;margin-right:6px}
+  .defs{margin:0 0 10px;padding:0;list-style:none;font-size:14px;line-height:1.7}
+  .defs li{padding:7px 0;border-top:1px dashed var(--line)}
+  .defs li:first-child{border-top:0}
+  .defs b{display:inline-block;min-width:5.4em}
+  .defs code{background:var(--cream);border-radius:5px;padding:1px 6px;letter-spacing:.12em;font-size:14px}
+  .know .src{font-size:14px;color:var(--ink-soft);margin:10px 0 0;line-height:1.65}
+  .more{display:block;margin-top:12px;padding:12px 14px;border-radius:12px;text-decoration:none;
+    background:linear-gradient(180deg,var(--orange),var(--orange-deep));color:#fff;font-weight:800;
+    text-align:center;font-size:14px}
+  .card{padding:11px}
+  .now{padding:9px}
+  .res{font-size:44px;min-height:50px}
+  .res.none{min-height:50px}
+  .pv{padding:9px 6px}
+  .pv-node.cur{width:56px;height:56px;font-size:29px}
+  .pv-step{min-height:26px}
+  .pv-node{width:32px;height:32px;font-size:15px}
+  .pv-line{height:9px}
+  .auto{margin-top:7px;gap:12px}
+  .key{margin-top:8px}
+  .keybtn{padding:9px 10px 10px}
+  .keybtn .knob{width:46px;height:46px}
+}
+@media(min-width:700px){ header h1{font-size:21px} .res{font-size:64px} }
+
+/* 見た目の調整（2026-09-24・AIっぽさを消す）: 影・グラデーション・大きな角丸・英字の飾り見出しをやめる（測定から生成し、機能に関わる部品は手で除外）。元のルールは上に残し上書き。 */
+body { background: #fff; }
+section.card, div.treewrap, #revOut, #read, #list { border-radius: 8px; }
+#keydock { box-shadow: none; }
+#keyBtn { box-shadow: none; background: rgb(90, 70, 50); border-radius: 8px; }
+#btnPlay { box-shadow: none; background: rgb(240, 138, 60); border-radius: 8px; }
+span.ba { border-radius: 6px; }
+a.more { background: rgb(240, 138, 60); border-radius: 8px; }
+/* 読み取り前だけ出る挿し絵（2026-09-24・Codex制作・シリーズ共通の男の子とウルフ）。文が出ると消える */
+.decout .ph-pic{display:flex;align-items:center;gap:10px}
+.decout .ph-pic img{width:96px;height:auto;flex:0 0 auto}
+/* ===== 2026-10-19 共通部品 D4（ストリート和忍者）に見た目をそろえる =====
+   色・ふち・影・書体だけ（kit/kit.css の部品を使う）。並び・操作・GA4・広告・JSON-LD・title は変えない。 */
+body.k-page{background:var(--k-surface);color:var(--k-sumi)}
+:root{--ink:var(--k-sumi);--ink-soft:#5b4a3e;--line:rgba(31,26,23,.2);--orange:var(--k-orange);--orange-deep:var(--k-shu)}
+header{position:relative;isolation:isolate;overflow:hidden;background:var(--k-kinari) url(/kit/img/d4-washi.webp) 0 0/320px auto;color:var(--k-sumi);border-bottom:var(--k-bw) solid var(--k-sumi)}
+header h1{font-family:var(--k-brush);font-weight:400;font-size:22px;letter-spacing:.08em;line-height:1.3;font-feature-settings:"palt" 1}
+header p{color:var(--k-text-2);opacity:1}
+.d4-ninja{position:absolute;right:14px;bottom:6px;width:14px;opacity:.36;pointer-events:none;z-index:-1}
+.card{background:var(--k-surface) url(/kit/img/d4-washi.webp) 0 0/320px auto;border:var(--k-bw) solid var(--k-sumi);border-radius:var(--k-r);box-shadow:var(--k-sh-l)}
+section.card{border-radius:var(--k-r)}
+.card h2,main h2{font-family:var(--k-head);font-weight:800;font-size:19px;letter-spacing:.04em;line-height:1.3;font-feature-settings:"palt" 1}
+/* ボタン: 主＝木札（1画面に1つ）／副＝生成り／小＝朱 */
+.d4-wide{display:flex;width:100%}
+.k-btn-sub{font-size:15px;padding:0 12px}
+.k-btn-sm{font-size:15px}
+textarea,input[type=text],input[type=number],select{border:var(--k-bw-s) solid var(--k-sumi);border-radius:var(--k-r);background:#fff}
+.bar{height:12px;border:var(--k-bw-s) solid var(--k-sumi);background:var(--k-surface);box-shadow:var(--k-sh-s)}
+.bar>i{background:var(--k-moegi)}
+.list{border:var(--k-bw-s) solid var(--k-sumi);border-radius:var(--k-r);background:#fff}
+details>summary{color:var(--k-sumi);text-decoration:underline;text-decoration-color:var(--k-orange);text-decoration-thickness:2px;text-underline-offset:4px}
+.note a,.read a,.howto a{color:var(--k-sumi);font-weight:700;text-decoration:underline;text-decoration-color:var(--k-orange);text-decoration-thickness:2px;text-underline-offset:3px}
+.card h2 .h2sub{font-family:var(--k-body);letter-spacing:0;color:#5b4a3e}
+/* 音で聞く＝このページの主ボタン（木札） */
+.hear.k-btn-main{border-style:solid;border-width:12px 16px;border-image:url(/kit/img/d3-wood.webp) 40 50 fill / 12px 16px stretch;border-radius:0;background:none;box-shadow:none;min-height:56px;padding:0 12px;color:#fff;text-shadow:var(--k-outline)}
+.hear.k-btn-main:active{transform:translate(4px,4px);box-shadow:none}
+/* 副ボタン・切り替え: 墨の2pxふち＋斜めずらしの影。選ばれたものは朱 */
+.sub button,.outbtns button,.tabs button,.mkind button,.mtabs button{border:var(--k-bw-s) solid var(--k-sumi);border-radius:var(--k-r);background:var(--k-kinari);color:var(--k-sumi);font-family:var(--k-bold);font-weight:400;font-feature-settings:"palt" 1;box-shadow:var(--k-sh-s)}
+.sub button:active,.outbtns button:active{transform:translate(3px,3px);box-shadow:none}
+.sub .go{border-color:var(--k-sumi);background:var(--k-shu);color:#fff}
+.tabs button.on,.mkind button[aria-pressed="true"],.mtabs button[aria-pressed="true"]{background:var(--k-shu);border-color:var(--k-sumi);color:#fff;transform:translate(3px,3px);box-shadow:none}
+.out,.decout{background:var(--k-kinari);border:var(--k-bw-s) solid var(--k-sumi);border-radius:var(--k-r)}
+.cell{border:var(--k-bw-s) solid var(--k-sumi);border-radius:var(--k-r)}
+.cell b{font-family:var(--k-bold);font-weight:400}
+.rev input{border:var(--k-bw-s) solid var(--k-sumi);border-radius:var(--k-r)}
+/* ===== 2026-10-20 清潔感（kkp-kit 17eac63 の方針）: 電鍵の地を茶色→墨に、つまみの脈打つ動き・波紋をやめる（無限に動く飾りは使わない）。
+   分岐図の水色/赤・短点/長点の色・押している長さの輪（.ring）は意味の色なので変えない。 */
+#keyBtn,.keybtn{background:var(--k-sumi);color:#fff;border-radius:var(--k-r);box-shadow:none}
+.keybtn:active,.keybtn.down{transform:translateY(3px);box-shadow:none}
+.keybtn .knob{background:var(--k-orange);border:var(--k-bw-s) solid var(--k-kinari);box-shadow:none;animation:none}
+.keybtn .knob::after{display:none;animation:none}
+.keybtn.down .knob{background:var(--k-shu)}
+@media(max-width:700px){.keydock{background:var(--k-surface);border-top:var(--k-bw-s) solid var(--k-sumi);box-shadow:none}}
+/* 段の箱（3px のふち＋影）をやめて罫線1本と余白に（入れ物に影は付けない） */
+section.card,section#read.card,section#list.card{background:none;border:0;border-top:var(--k-bw-s) solid var(--k-sumi);border-radius:0;box-shadow:none;padding:16px 0 6px;margin-bottom:22px}
+/* 2026-10-21 遊ぶ画面・結果画面の読みやすさ（実際に遊んで測った分） */
+/* 送るボタンの見た目がスマホ幅の中にしかなく、PCでは素のリンク（青字・13px）になっていた */
+.shr{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.shr a,.shr button{display:block;text-align:center;text-decoration:none;font:inherit;font-weight:800;font-size:14px;border-radius:10px;padding:10px 8px;cursor:pointer;border:1px solid transparent}
+#shL{background:#0b873e;color:#fff}
+#shC{background:#fff;color:var(--ink);border-color:var(--line)}
+.shr[hidden]{display:none}
+</style>
+<!-- kkp-rel-d4:start -->
+<style id="kkp-rel-d4">
+/* あわせて使えるアプリ（統一仕様の欄）を D4 に: 和紙の面・筆の見出し・墨の字＋オレンジの下線＋道しるべ。入れ物なので影なし（kit: 影は押せるものだけ）。中身とリンクは触らない（インライン style に勝つため !important） */
+@media screen{
+.kkp-rel{box-sizing:border-box;background:var(--k-kinari) url(/kit/img/d4-washi.webp) 0 0/320px auto!important;border:var(--k-bw-s) solid var(--k-sumi)!important;border-radius:var(--k-r)!important;box-shadow:none!important;padding:12px 16px 6px!important;color:var(--k-sumi);text-align:left}
+.kkp-rel>div:first-child,.kkp-rel>b:first-child{display:block;margin:0 0 4px!important;padding:0!important;border:0!important;font-family:var(--k-head)!important;font-weight:800!important;font-size:19px!important;line-height:1.3!important;letter-spacing:.04em;color:var(--k-sumi)!important;font-feature-settings:"palt" 1}
+.kkp-rel>a{display:flex!important;align-items:center;gap:12px;box-sizing:border-box;min-height:48px;margin:0!important;padding:10px 0!important;border:0!important;border-top:1px dashed var(--k-line-soft)!important;background:none!important;color:var(--k-sumi)!important;font-size:15px!important;font-weight:700!important;line-height:1.55!important;letter-spacing:.02em;text-decoration:underline!important;text-decoration-color:var(--k-orange)!important;text-decoration-thickness:2px!important;text-underline-offset:4px;-webkit-tap-highlight-color:transparent}
+.kkp-rel>a::after{content:"";flex:none;width:26px;height:17px;margin-left:auto;background:var(--k-sign) center/100% 100% no-repeat;transition:transform .2s}
+.kkp-rel>a:hover{color:var(--k-shu)!important}
+.kkp-rel>a:hover::after,.kkp-rel>a:active::after,.kkp-rel>a:focus-visible::after{transform:translateX(4px)}
+}
+@media screen and (max-width:712px){.kkp-rel{max-width:calc(100vw - 24px)!important;margin-left:auto!important;margin-right:auto!important}}
+/* 読みやすさ 2026-10-21（字14px以上・明暗差4.5:1以上） */
+#shL{background:#0b873e}
+.more,a.more{color:var(--k-sumi)}
+/* /読みやすさ */
+/* 本の紹介（Amazonアソシエイト・2026-11-04） */
+.bk{margin-top:26px}
+.bk>h2{margin:0;padding-bottom:4px;border-bottom:2px solid var(--k-sumi);font-size:18px;font-weight:800}
+.bk-pr{margin:8px 0 2px;font-size:12px;line-height:1.6;color:var(--k-text-2)}
+.bk-pr span{display:inline-block;margin-right:6px;padding:0 5px;border:1.5px solid var(--k-text-2);border-radius:3px;font-weight:800}
+.bk-list{margin:0;padding:0;list-style:none}
+.bk-list li{border-bottom:1px solid var(--k-line-soft)}
+.bk-list a{display:flex;flex-direction:column;justify-content:center;min-height:52px;padding:8px 26px 8px 0;position:relative;text-decoration:none;color:var(--k-sumi)}
+.bk-list b{font-size:15px;font-weight:800;line-height:1.45}
+.bk-list span{font-size:13px;line-height:1.5;color:var(--k-text-2)}
+.bk-list em{font-style:normal;font-weight:800;color:var(--k-sumi)}
+.bk-list a::after{content:"→";position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--k-orange)}
+.bk-ku{margin:8px 0 0;font-size:13px;line-height:1.7;color:var(--k-text-2)}
+.bk-ku a{font-weight:800;color:var(--k-sumi)}
+</style>
+<!-- kkp-rel-d4:end -->
+</head>
+<body class="k-page">
+<header>
+  <img class="d4-ninja" src="/kit/img/d4-ninja.webp" alt="" aria-hidden="true">
+  <h1>モールス信号を送り合う</h1>
+  <p>打って、音を確かめて、そのまま送る。届いた符号は貼れば読めます</p>
+
+</header>
+
+<main>
+
+  <section class="card" id="send">
+    <h2>打つ・送る</h2>
+    <p class="legend2"><b><i class="d"></i>短い線</b>＝トン　<b><i class="h"></i>長い線</b>＝ツー　
+    たどった先の丸がその文字。<b>4打目より先</b>は<a href="#list">一覧表</a>へ。</p>
+    <div class="treewrap"><div class="tree" id="tree"></div></div>
+    <div class="keydock" id="keydock">
+    <div class="bar off" id="bar"><i></i></div>
+    <div class="key">
+      <button class="keybtn" id="keyBtn" type="button" aria-label="電鍵。短く押すと点、長く押すと線">
+        <span class="kwrap"><span class="ring" id="ring"></span><span class="knob"></span></span>
+        <span class="kstat" id="live">ここを押してください</span>
+      </button>
+        <label class="mute" title="音を消す">
+          <input type="checkbox" id="sound" checked><span></span>
+        </label>
+    </div>
+    </div>
+
+      <div class="rev"><input id="msgIn" type="text" maxlength="60" autocomplete="off"
+        placeholder="電鍵で打つか、ここに入力（かな・カナ・英数字）"></div>
+        <div class="outbtns">
+          <button type="button" id="btnSpace">スペース</button>
+          <button type="button" id="btnDel">1文字消す</button>
+        </div>
+      <div class="revout" id="revOut"><span class="ph">打つと、ここに符号が出ます</span></div>
+        <button type="button" id="btnPlay" class="hear k-btn k-btn-main"><span class="ico"></span>音で聞く</button>
+      <p class="mnote" id="wKind"></p>
+      <p class="mnote" id="wNote">送ると、受け取った人はリンクを開くだけで同じ音を聞けます。</p>
+      <div class="shr" id="wShare" hidden>
+        <a id="shL" href="#" target="_blank" rel="noopener">LINEで送る</a>
+        <button type="button" id="shC">リンクをコピー</button>
+      </div>
+      <p class="note">キーボードでも打てます: <b>・</b>点 / <b>-</b>線 / Backspace戻す　<a href="#read">届いた符号を読む →</a></p>
+  </section>
+
+
+
+
+  <section class="card" id="read">
+    <h2>届いた符号を読む<span class="h2sub">貼ると文になります。タップで音も鳴ります</span></h2>
+    <div class="mkind" id="dKind">
+      <button type="button" data-w="0" aria-pressed="true">欧文（英数字）</button>
+      <button type="button" data-w="1" aria-pressed="false">和文（カタカナ）</button>
+    </div>
+    <div class="rev"><input id="decIn" type="text" placeholder="・－・ でも .-. でも貼れます" autocomplete="off"></div>
+    <div class="decout" id="decOut"><span class="ph ph-pic"><img src="/img/empty-listen.webp" width="240" height="155" alt="" loading="lazy" decoding="async"><span>受け取った符号を貼ると、ここに文が出ます</span></span></div>
+    <div class="outbtns">
+      <button type="button" id="dPlay">音で聞く</button>
+      <button type="button" id="dUse">この文を打ってみる</button>
+    </div>
+    <p class="note">読めないときは上で欧文・和文を切り替え（<b>・－</b> は欧文 <b>A</b>・和文 <b>イ</b>）。</p>
+  </section>
+
+  <!-- 広告は道具のカードの外に置く。中に入れると枠も背景も本文と同じになり、
+       ツールの一部に見えてしまう（実際そう見えていた）。 -->
+  <div class="ad-slot" id="ad-after-out">
+    <div class="ad-label">広告</div>
+    <ins class="adsbygoogle" style="display:block"
+         data-ad-client="ca-pub-1298304917726270"
+         data-ad-slot="2937937957"
+         data-ad-format="rectangle"
+         data-full-width-responsive="false"></ins>
+  </div>
+
+
+  <section class="card" id="list">
+    <h2>一覧表<span class="h2sub">4打目より先の数字・記号もここにあります</span></h2>
+    <div class="tabs">
+      <button type="button" class="on" data-set="alpha">アルファベット</button>
+      <button type="button" data-set="num">数字</button>
+      <button type="button" data-set="sym">記号</button>
+      <button type="button" data-set="wabun">和文（カナ）</button>
+    </div>
+    <div class="grid" id="grid"></div>
+    <p class="note" id="setnote" hidden></p>
+    <p class="note">欧文は国際モールス符号（ITU-R M.1677-1）、和文は無線局運用規則に基づいています。</p>
+  </section>
+
+  <section class="card know">
+    <h2>モールス信号の決まりごと</h2>
+    <p class="lead">符号を覚えたあとに役立つ決まりごとです。</p>
+
+    <h3>長さは「短点いくつ分」ですべて決まる</h3>
+    <p>決まっているのは秒数ではなく比です。短点1つを1単位として数えるので、速さが違っても比を守れば通じます。</p>
+    <table class="unit">
+      <tr><th>短点（トン）</th><td><span class="ba" style="width:14px;background:var(--dot)"></span>1単位</td></tr>
+      <tr><th>長点（ツー）</th><td><span class="ba" style="width:42px;background:var(--dash)"></span>3単位</td></tr>
+      <tr><th>符号の中の間</th><td>1単位</td></tr>
+      <tr><th>文字と文字の間</th><td>3単位</td></tr>
+      <tr><th>語と語の間</th><td>7単位</td></tr>
+    </table>
+    <p>速さより<b>間の長さ</b>を正確に。文字の切れ目を知らせる合図はなく、受け手は音と間の長さだけで区切ります。</p>
+
+    <h3>速さは「1分間に何語」で表す</h3>
+    <p>基準になるのは <b>PARIS</b> という語です。語の後ろの空きまで入れるとちょうど50単位になるので、これを物差しに使います。1分間にPARISを20回送れる速さが20語/分（20&nbsp;WPM）で、このとき1単位は60ミリ秒です。</p>
+    <p>この分岐表では1単位を70ミリ秒（およそ17語/分）にしています。短く押すか長く押すかの境目は、ちょうどその中間の2単位です。</p>
+
+    <h3>打ち間違えたときは、短点を8つ</h3>
+    <p>短点を8つ続けて送ると「いまのは間違い」という合図になります。訂正符号（HH）と呼ばれるもので、受け手は<b>直前のことばを丸ごと捨てて</b>、打ち直しを待ちます。文字1つだけを直すのではなく、ことば単位でやり直すのが作法です。このページの電鍵も同じように動きます。</p>
+
+    <h3>覚え方には定石がある</h3>
+    <ul class="defs">
+      <li><b>コッホ法</b>いきなり目標の速さで、ただし2文字だけから始めます。9割取れるようになったら1文字ずつ足していく方法です。</li>
+      <li><b>ファーンズワース</b>符号そのものは速いまま送り、文字と文字の間だけを広げます。「文字20語/分・全体5語/分」のような設定から始めます。</li>
+    </ul>
+    <p>どちらも<b>ゆっくり打って覚えない</b>ための工夫です。遅い符号で覚えると点と線を数えるくせがつき、速くすると聞き取れなくなります。</p>
+
+    <h3>知っておくと通じる合図</h3>
+    <ul class="defs">
+      <li><b>SOS</b><code>・・・－－－・・・</code>区切らず一続きに送ります。3文字ではなくこれで1つの合図です。</li>
+      <li><b>CQ</b><code>－・－・　－－・－</code>「誰でもいいので応答してほしい」という呼びかけ。</li>
+      <li><b>AR</b><code>・－・－・</code>通信の終わり。<b>AS</b><code>・－・・・</code>少し待ってほしい。</li>
+      <li><b>?</b><code>・・－－・・</code>もう一度送ってほしいとき。</li>
+    </ul>
+
+    <h3>日本語を送る「和文モールス」もある</h3>
+    <p>カタカナを送るための符号が別に決められています。イロハ順に欧文の符号を当てはめて作られたもので、無線局運用規則にも定めがあります。ただし文字の出やすさを考えずに割り当てたので、よく使う文字に短い符号が来ておらず、効率は欧文に劣ります。<b>ヘ</b>が<code>・</code>、<b>ム</b>が<code>－</code>です。</p>
+
+    <h3>いまの日本での位置づけ</h3>
+    <p>実技試験はなくなりましたが、モールスは今も現役です。アマチュア無線の国家試験では、実技が第三級で2005年、第一級・第二級で2011年10月に廃止されました。それでも符号の理解は筆記で問われ、電波の届きにくい条件でも通じるCW（モールス通信）は使われ続けています。</p>
+
+    <a class="more" href="/hajimekata/">読み物：モールス信号のはじめ方 →</a>
+
+    <p class="src">出典：国際電気通信連合 ITU-R M.1677-1「International Morse code」／総務省 無線局運用規則 別表第一号（第十二条関係）／総務省報道資料「アマチュア無線技士国家試験に係る試験科目の見直し」</p>
+  </section>
+  <!-- 本の紹介（Amazonアソシエイト・2026-11-04。価格は書かない・読み放題は置いた日に商品ページで確認） -->
+  <section class="bk bk-wrap" aria-labelledby="bk-h">
+    <h2 id="bk-h">モールスとアマチュア無線の本</h2>
+    <p class="bk-pr"><span>PR</span>Amazonのリンクです。Amazonのアソシエイトとして、web忍者の砦は適格販売により収入を得ています。</p>
+    <ul class="bk-list">
+      <li><a href="https://www.amazon.co.jp/dp/4789852806?tag=kkp15-22" target="_blank" rel="nofollow sponsored noopener" onclick="if(typeof gtag==='function')gtag('event','aff_amazon_book')"><b>モールス通信【オンデマンド版】</b><span>CQ ham radio編集部</span></a></li>
+      <li><a href="https://www.amazon.co.jp/dp/4806918695?tag=kkp15-22" target="_blank" rel="nofollow sponsored noopener" onclick="if(typeof gtag==='function')gtag('event','aff_amazon_book')"><b>はじめての3級・4級アマチュア無線技士試験 テキスト&amp;用語集</b><span>吉川忠久</span></a></li>
+    </ul>
+  </section>
+</main>
+
+<p class="caution">このページは学ぶための教材です。電波を出して交信するには、アマチュア無線技士の資格と無線局の免許が必要です。</p>
+
+<script src="/m.js?v=1"></script>
+<script>
+
+/* ===== 木を組み立てる（MORSEが正本。表と木がずれない） ===== */
+const TREE = {};
+for (const ch in MORSE) {
+  let n = TREE;
+  for (const c of MORSE[ch]) { n = (n[c] = n[c] || {}); }
+  n._ = ch;
+}
+const nodeAt = (p) => { let n = TREE; for (const c of p) { n = n && n[c]; if (!n) return null; } return n; };
+
+let path = '';      // いま辿っている経路（. と -）
+let preview = null; // 押している最中の行き先（'.' または '-'）
+let text = '';      // 確定した文字列
+
+const $ = (id) => document.getElementById(id);
+
+function render(){
+  const n = nodeAt(path);
+  const cur = n && n._;
+
+
+
+  // 電鍵で打った結果も、直接打ち込んだ文も、同じ1つの欄が持つ。
+  const box = $('msgIn');
+  if (box.value !== text) box.value = text;
+  renderRev();
+  drawTree();
+}
+
+/* 本物のモールスは「間」で文字が切れる（文字間は3単位）。
+   その感覚に合わせ、入力が止まったら自動で確定する。
+   いきなり確定すると驚くので、残り時間をバーで見せる。 */
+/* 確定までの待ちは打つ人の速さに合わせる。
+   本物のモールスは絶対の秒数を決めておらず、短点1に対して文字間3、という
+   比だけが決まっている（無線局運用規則 別表第一号）。だから受け手は相手の
+   速さを掴んでから区切る。ここでも同じで、符号内の間（離してから次に押すまで）を
+   見て、その3倍を文字の切れ目とみなす。
+   1000ms固定だったころは規則の約4.8倍あり、SOSを打つと全体の3分の2が
+   待ち時間だった。 */
+/* 音で聞くときは規則どおり文字間3単位（210ms）で鳴るのに、自分で打つと
+   560ms待たされていた。同じSOSでも打つほうが1.7倍おそく、耳で覚えた速さと
+   手の速さが噛み合わない。規則の210msまで下げると打ちかけで切れるので、
+   その少し上を下限にする。 */
+const AUTO_MIN = 260, AUTO_MAX = 900, AUTO_DEFAULT = 420;
+let gapLog = [];          // 直近の「符号内の間」
+function autoMs(){
+  if (gapLog.length < 2) return AUTO_DEFAULT;
+  const a = gapLog.slice().sort((x, y) => x - y);
+  const unit = a[Math.floor(a.length / 2)];               // 中央値。1回の乱れに引きずられない
+  return Math.min(AUTO_MAX, Math.max(AUTO_MIN, Math.round(unit * 2.6)));
+}
+/* 文字にならない打ち方をした時に、打ち直しへ戻すまでの時間 */
+const RESET_MS = 1400;
+/* 本物の電鍵でも打ち間違いは起きる。国際モールス（ITU-R M.1677）では
+   短点を8つ続けて送ると「訂正」の合図になり、受け手は直前のことばを捨てる。
+   このアプリでも同じ作法にしている。 */
+const ERR_SIGN = '........';
+let autoTimer = null, autoRaf = null;
+
+function stopAuto(){
+  clearTimeout(autoTimer); cancelAnimationFrame(autoRaf);
+  autoTimer = autoRaf = null;
+  const bar = $('bar'); bar.classList.add('off'); bar.firstElementChild.style.width = '0';
+}
+function startAuto(){
+  stopAuto();
+  if (!path) return;
+  const n = nodeAt(path);
+
+  // 文字が決まっている位置：残り時間をバーで見せて自動確定する
+  if (n && n._) {
+    const bar = $('bar'); bar.classList.remove('off');
+    const wait = autoMs();
+    const t0 = performance.now();
+    (function tick(){
+      const p = Math.min(1, (performance.now() - t0) / wait);
+      bar.firstElementChild.style.width = (p * 100).toFixed(1) + '%';
+      if (p < 1) autoRaf = requestAnimationFrame(tick);
+    })();
+    autoTimer = setTimeout(() => { stopAuto(); fix(); }, wait);
+    return;
+  }
+
+  // 文字が決まらない位置（打ちすぎ・訂正符号の途中）。
+  // ここで何もしないと自動確定が止まったまま復帰せず、以後どれだけ打っても
+  // 反応がなくなる（連打すると固まって見える原因だった）。少し待って打ち直しに戻す。
+  autoTimer = setTimeout(() => {
+    stopAuto(); path = ''; render();
+    $('live').textContent = 'その組み合わせに文字はありません。打ち直してください';
+  }, RESET_MS);
+}
+
+function push(c){ if (nodeAt(path + c)) { const a = ac(); if (a && a.state === 'suspended') a.resume(); playSign(c); path += c; render(); startAuto(); } }
+function fix(){ stopAuto(); const n = nodeAt(path); if (n && n._) { text += n._; path = ''; lastUpAt = 0; render(); } }
+
+/* ===== 木の描画 ===== */
+const DEPTH = 4;                      // 4段でA〜Zがちょうど収まる
+function drawTree(){
+  // 画面幅に収めるため viewBox で描き、CSSで width:100% にする。
+  const W = 344, ROW = 39, TOP = 14, BOT = 12, LX = 4;
+  const H = TOP + ROW * DEPTH + BOT;
+  const MX = LX + 6;
+  const xOf = (d, i) => MX + (W - MX - 6) * (i + 0.5) / (1 << d);
+  const yOf = (d) => TOP + ROW * d;
+  const rOf = (d) => d === 0 ? 11.5 : d === DEPTH ? 10 : 11;
+
+  // その節から先に文字があるか（無い枝は描かない。線だけ伸びて宙に浮くのを防ぐ）
+  function hasLabel(node, depth){
+    if (!node) return false;
+    if (node._) return true;
+    if (depth >= DEPTH) return false;
+    return hasLabel(node['.'], depth + 1) || hasLabel(node['-'], depth + 1);
+  }
+
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="モールス信号の分岐図">';
+
+
+  // 枝
+  for (let d = 0; d < DEPTH; d++) {
+    for (let i = 0; i < (1 << d); i++) {
+      const p = codeOf(d, i); if (d > 0 && !nodeAt(p)) continue;
+      for (const [c, k] of [['.', 0], ['-', 1]]) {
+        const cp = p + c, cn = nodeAt(cp);
+        if (!hasLabel(cn, d + 1)) continue;                 // 行き止まりの枝は描かない
+        const on = path.startsWith(cp);
+        const x1 = xOf(d, i), y1 = yOf(d), x2 = xOf(d + 1, i * 2 + k), y2 = yOf(d + 1);
+        // トンは短い線、ツーは長い線。枝の長さそのものが符号を表す。
+        // 節どうしはうすい線でつなぎ、その上に「短点／長点」の太い線を重ねる。
+        const R = c === '.' ? 0.30 : 0.86;                 // 実際の比は1:3
+        const a = (1 - R) / 2, b = 1 - a;                  // 枝の中央に置く
+        const sx = x1 + (x2 - x1) * a, sy = y1 + (y2 - y1) * a;
+        const ex = x1 + (x2 - x1) * b, ey = y1 + (y2 - y1) * b;
+        const base = c === '.' ? '#3EB8CE' : '#F0615C';
+        s += '<line x1="' + x1.toFixed(1) + '" y1="' + y1 + '" x2="' + x2.toFixed(1) + '" y2="' + y2 +
+             '" stroke="' + (on ? '#F3D3AC' : '#EDE0C8') + '" stroke-width="' + (on ? 1.6 : 1) + '"/>';
+        s += '<line x1="' + sx.toFixed(1) + '" y1="' + sy.toFixed(1) + '" x2="' + ex.toFixed(1) + '" y2="' + ey.toFixed(1) +
+             '" stroke="' + (on ? '#F08A3C' : base) + '" stroke-width="' + (on ? 5 : 3.6) +
+             '" stroke-linecap="round"' + (on ? '' : (path ? ' opacity=".42"' : ' opacity=".8"')) + '/>';
+      }
+    }
+  }
+
+  // 節
+  for (let d = 0; d <= DEPTH; d++) {
+    for (let i = 0; i < (1 << d); i++) {
+      const p = codeOf(d, i);
+      const n = d === 0 ? TREE : nodeAt(p); if (!n) continue;
+      const label = d === 0 ? '始' : (n._ || '');
+      if (!label) continue;
+      const deep = path.length > DEPTH;
+      const here = deep ? (d === DEPTH && path.startsWith(p)) : (p === path);
+      const onPath = path.startsWith(p);
+      const isPrev = preview !== null && p === path + preview;
+      const x = xOf(d, i).toFixed(1), y = yOf(d);
+      const r = here ? 14.5 : (isPrev ? rOf(d) + 1.6 : rOf(d));
+      if (here) s += '<circle cx="' + x + '" cy="' + y + '" r="' + (r + 5) + '" fill="#F08A3C" opacity=".2"/>';
+      if (isPrev) {
+        const pc = preview === '.' ? '#3EB8CE' : '#F0615C';
+        s += '<circle cx="' + x + '" cy="' + y + '" r="' + (r + 6) + '" fill="none" stroke="' + pc +
+             '" stroke-width="2.6" stroke-dasharray="4 3"><animate attributeName="opacity" values="1;.35;1" dur="0.8s" repeatCount="indefinite"/></circle>';
+      }
+      s += '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' +
+           (here ? '#F08A3C' : isPrev ? (preview === '.' ? '#E8F6FA' : '#FDEEED') : onPath ? '#FBE3C6' : '#fff') +
+           '" stroke="' + (here ? '#E06A20' : isPrev ? (preview === '.' ? '#3EB8CE' : '#F0615C') : onPath ? '#E9A868' : '#DCC9A6') +
+           '" stroke-width="' + (here ? 2.4 : isPrev ? 2.2 : 1.3) + '"/>';
+      s += '<text x="' + x + '" y="' + (y + (here ? 6 : 5)) + '" text-anchor="middle" font-size="' +
+           (here ? 17 : 14) + '" font-weight="800" fill="' +
+           (here ? '#fff' : isPrev ? (preview === '.' ? '#1d7d90' : '#B23A36') : '#4A3B28') + '">' + label + '</text>';
+    }
+  }
+
+  s += '</svg>';
+  let extra = '';
+  if (path.length > DEPTH) {
+    const head = nodeAt(path.slice(0, DEPTH));
+    const rest = [...path.slice(DEPTH)].map(c =>
+      '<span class="xm ' + (c === '.' ? 'd' : 'h') + '"></span>').join('');
+    const cur = nodeAt(path);
+    extra = '<div class="deep"><b>' + ((head && head._) || '') + '</b> から さらに ' + rest +
+            ' → <b>' + ((cur && cur._) || '‥') + '</b>' +
+            '<span class="dn">図は4打目までです。数字と記号はこの先にあります → ' +
+            '<a href="#list">一覧表で見る</a></span></div>';
+  }
+  $('tree').innerHTML = s + extra;
+}
+// 深さdのi番目のノードが表す符号（左=点、右=線）
+function codeOf(d, i){
+  let s = '';
+  for (let k = d - 1; k >= 0; k--) s += ((i >> k) & 1) ? '-' : '.';
+  return s;
+}
+
+/* ===== 音 =====
+   国際モールスの決まりに合わせる。短点=1単位、長点=3単位、
+   符号内の間=1単位、文字間=3単位、語間=7単位。
+   ここでは1単位=70msにしている（毎分およそ17語のゆっくりめ）。 */
+function soundOn(){ return $('sound').checked; }
+
+/* 押している間ずっと鳴らす（電鍵と同じ）。離した時点で止める。 */
+let holdOsc = null, holdGain = null;
+function toneStart(){
+  if (!soundOn()) return;
+  const c = ac(); if (!c) return;
+  if (c.state === 'suspended') c.resume();
+  toneStop();
+  holdOsc = c.createOscillator(); holdGain = c.createGain();
+  holdOsc.type = 'sine'; holdOsc.frequency.value = FREQ;
+  holdGain.gain.setValueAtTime(0, c.currentTime);
+  holdGain.gain.linearRampToValueAtTime(0.22, c.currentTime + 0.008);
+  holdOsc.connect(holdGain); holdGain.connect(c.destination);
+  holdOsc.start();
+}
+function toneStop(){
+  if (!holdOsc) return;
+  const c = ac(), o = holdOsc, g = holdGain;
+  holdOsc = holdGain = null;
+  try {
+    g.gain.cancelScheduledValues(c.currentTime);
+    g.gain.setValueAtTime(g.gain.value, c.currentTime);
+    g.gain.linearRampToValueAtTime(0, c.currentTime + 0.012);
+    o.stop(c.currentTime + 0.02);
+  } catch (e) {}
+}
+/* ===== 電鍵の機械音 =====
+   本物の電鍵は、接点が閉じるときと開くときに「カチ」と鳴る。信号音とは別の、
+   ごく短い打撃音。ノイズを短く切って高い帯域だけ通すと近い音になる。
+   押す側は重く（低め・長め）、離す側は軽く（高め・短め）。実物と同じ差。 */
+let CLICK_BUF = null;
+function clickBuf(c){
+  if (CLICK_BUF) return CLICK_BUF;
+  const n = Math.floor(c.sampleRate * 0.03);
+  const b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  CLICK_BUF = b; return b;
+}
+function clack(down){
+  if (!soundOn()) return;
+  const c = ac(); if (!c) return;
+  if (c.state === 'suspended') c.resume();
+  const t = c.currentTime;
+  const src = c.createBufferSource(); src.buffer = clickBuf(c);
+  const bp = c.createBiquadFilter();
+  bp.type = 'bandpass'; bp.frequency.value = down ? 1900 : 2900; bp.Q.value = 1.1;
+  const g = c.createGain();
+  const dur = down ? 0.028 : 0.018;
+  g.gain.setValueAtTime(down ? 0.3 : 0.19, t);
+  g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+  src.connect(bp); bp.connect(g); g.connect(c.destination);
+  src.start(t); src.stop(t + dur + 0.01);
+}
+
+function playSign(c){ if (soundOn()) beep(c === '.' ? 1 : 3); }
+
+let playTimer = null;
+
+/* ===== モールスで送りあう =====
+   受け取った人が「読みたい」と思ったとき、その場で読めて、そのまま返事まで
+   作れるようにする。共有URLには符号だけを載せる（答えは載せない）ので、
+   リンクを開いた人は音を聞いて自分で読むこともできる。
+   ・ = . / － = - / 文字の切れ目 = _ / 語の切れ目 = __ （どれもURLで壊れない字） */
+
+const SITE = 'https://morse.kkpwebninja.com/';
+function shareUrl(m, wa){ return SITE + '?m=' + m + (wa ? '&w=1' : ''); }
+
+let lastMorse = '', lastWa = false;
+/* 符号そのものを鳴らす。文字から引き直すと欧文の表しか見ないので、
+   和文（カタカナ）がまったく鳴らなかった。作った符号をそのまま音にする。 */
+function playMorseStr(str){
+  if (!soundOn()) return;
+  const c = ac(); if (!c || !str) return;
+  if (c.state === 'suspended') c.resume();
+  let t = c.currentTime + 0.05;
+  for (const word of str.split('__')) {
+    if (word !== str.split('__')[0]) t += 7 * UNIT / 1000;
+    for (const sym of word.split('_').filter(Boolean)) {
+      for (const k of sym) {
+        beep(k === '.' ? 1 : 3, t);
+        t += (k === '.' ? 1 : 3) * UNIT / 1000 + UNIT / 1000;
+      }
+      t += 2 * UNIT / 1000;
+    }
+  }
+  const btn = $('btnPlay'); btn.textContent = '再生中…';
+  clearTimeout(playTimer);
+  playTimer = setTimeout(() => { btn.textContent = '音で聞く'; }, (t - c.currentTime) * 1000 + 120);
+}
+
+function renderRev(){
+  const raw = $('msgIn').value;
+  const box = $('revOut');
+  if (!raw.trim()) {
+    box.innerHTML = '<span class="ph">入力すると、下にモールスが出ます</span>';
+    lastMorse = ''; $('wShare').hidden = true; $('wKind').textContent = ''; return;
+  }
+  lastWa = hasKana(raw);
+  const src = lastWa ? toKana(raw) : raw.toUpperCase();
+  const map = lastWa ? WABUN : MORSE;
+  let miss = 0;
+  box.innerHTML = [...src].map(ch => {
+    if (ch === ' ' || ch === '\u3000') return '<span class="w">/<i>空白</i></span>';
+    const code = map[ch];
+    if (!code) miss++;
+    return '<span class="w' + (code ? '' : ' ng') + '">' +
+      (code ? code.replace(/\./g, '・').replace(/-/g, '－') : '×') + '<i>' + ch + '</i></span>';
+  }).join('');
+  lastMorse = toMorse(raw, lastWa);
+  const ok = !!lastMorse;
+  $('wShare').hidden = !ok;
+  if (!ok) return;
+  const symbols = lastMorse.replace(/__/g, ' / ').replace(/_/g, ' ').replace(/\./g, '・').replace(/-/g, '－');
+  const n = lastMorse.replace(/_/g, '').length;
+  $('wKind').textContent = (lastWa ? '和文モールス（カタカナ）' : '欧文モールス（英数字）')
+    + '　' + raw.length + '文字 → ' + n + '符号';
+  $('wNote').textContent = miss
+    ? '×の字は送れません。モールスには漢字の符号がないので、ひらがな・カタカナ・英数字にしてください。'
+    : '送ると、受け取った人はリンクを開くだけで同じ音を聞けます。';
+  $('shL').href = 'https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(shareUrl(lastMorse, lastWa))
+                + '&text=' + encodeURIComponent(symbols + '\nモールス信号で書きました。リンクを開くと文と音になります');
+}
+
+
+function esc(t){ return t.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+$('shC').onclick = async () => {
+  try { await navigator.clipboard.writeText(shareUrl(lastMorse, lastWa)); $('shC').textContent = 'コピーしました'; }
+  catch (e) { $('shC').textContent = 'コピーできません'; }
+  setTimeout(() => { $('shC').textContent = 'リンクをコピー'; }, 1600);
+};
+
+
+/* ===== 一覧 ===== */
+const SETS = {
+  alpha: [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'],
+  num:   [...'0123456789'],
+  sym:   Object.keys(MORSE).filter(k => !/[A-Z0-9]/.test(k)),
+  wabun: Object.keys(WABUN)
+};
+/* 和文は別の表を引く。同じ ・－ でも欧文はA、和文はイなので混ぜてはいけない。 */
+const SETMAP = { alpha: MORSE, num: MORSE, sym: MORSE, wabun: WABUN };
+const SETNOTE = { wabun: 'カタカナのみ。濁点（<b>゛</b>）と半濁点（<b>゜</b>）は文字のあとに続けて送ります（ガ＝カ＋゛）。' };
+function renderGrid(set){
+  const map = SETMAP[set] || MORSE;
+  $('grid').innerHTML = SETS[set].map(ch =>
+    '<div class="cell"><b>' + (ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch) + '</b><span>' +
+    map[ch].replace(/\./g, '・').replace(/-/g, '－') + '</span></div>').join('');
+  const n = $('setnote');
+  if (n) { n.innerHTML = SETNOTE[set] || ''; n.hidden = !SETNOTE[set]; }
+}
+
+/* ===== 電鍵 =====
+   実物の電鍵は「押した長さ」で短点と長点を打ち分ける。
+   国際モールスでは長点=短点の3倍なので、境目は2単位に置く。 */
+const DASH_MS = UNIT * 2;      // これ以上押したら線
+let keyDownAt = 0, keyRaf = null;
+
+let lastUpAt = 0;
+function keyDown(ev){
+  if (ev) ev.preventDefault();
+  if (keyDownAt) return;                     // 二重発火（touch＋mouse）を防ぐ
+  // pointerdown を打ち消しているので、入力欄からフォーカスが外れない。
+  // そのままだとスマホのキーボードが出たままになるので、明示的に外す。
+  const a = document.activeElement;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) a.blur();
+  keyDownAt = performance.now();
+  // 同じ文字を打っている途中の間だけ数える。文字が変わったあとの間は
+  // 「考えていた時間」なので混ぜない。
+  if (path && lastUpAt) {
+    const g = keyDownAt - lastUpAt;
+    if (g >= 40 && g <= 700) { gapLog.push(g); if (gapLog.length > 9) gapLog.shift(); }
+  }
+  $('keyBtn').classList.add('down','used');
+  stopAuto();
+  clack(true);
+  toneStart();
+  const live = $('live');
+  preview = '.'; drawTree();
+  (function tick(){
+    if (!keyDownAt) return;
+    const held = performance.now() - keyDownAt;
+    const isDash = held >= DASH_MS;
+    const ring = $('ring');
+    ring.style.setProperty('--p', Math.min(1, held / DASH_MS).toFixed(3));
+    ring.style.setProperty('--rc', isDash ? '#F0615C' : '#3EB8CE');
+    const want = isDash ? '-' : '.';
+    if (want !== preview) { preview = want; drawTree(); }   // 変わった時だけ描き直す
+    const dest = nodeAt(path + want);
+    live.textContent = isDash
+      ? '離すと 線（■）' + (dest && dest._ ? ' → ' + dest._ : '')
+      : 'このまま離すと 点（●）' + (dest && dest._ ? ' → ' + dest._ : '');
+    keyRaf = requestAnimationFrame(tick);
+  })();
+}
+function keyUp(ev){
+  if (ev) ev.preventDefault();
+  if (!keyDownAt) return;
+  const held = performance.now() - keyDownAt;
+  lastUpAt = performance.now();
+  keyDownAt = 0;
+  cancelAnimationFrame(keyRaf);
+  $('keyBtn').classList.remove('down');
+  clack(false);
+  $('ring').style.setProperty('--p', 0);
+  toneStop();
+  preview = null;
+  $('live').textContent = '押している長さで決まります';
+  const c = held >= DASH_MS ? '-' : '.';
+  const next = path + c;
+
+  // 短点8つ＝訂正。直前のことばを消して、そこから打ち直す。
+  if (next === ERR_SIGN) {
+    stopAuto();
+    const had = /\S/.test(text);
+    text = text.replace(/\S+\s*$/, '');
+    path = ''; render();
+    $('live').textContent = had ? '訂正：直前のことばを消しました' : '訂正：消すことばがありません';
+    return;
+  }
+
+  if (nodeAt(next)) { path = next; render(); startAuto(); return; }
+
+  // 文字は無いが訂正符号の途中。あと何打で訂正になるかを見せる。
+  if (ERR_SIGN.startsWith(next)) {
+    path = next; render(); startAuto();
+    $('live').textContent = 'あと' + (ERR_SIGN.length - next.length) + '打で訂正（直前のことばを消す）';
+    return;
+  }
+
+  // 行き止まり。打ったこと自体は伝えつつ、復帰タイマーは必ず動かす。
+  drawTree();
+  $('live').textContent = 'その先に文字はありません';
+  startAuto();
+}
+/* 台座の高さは文言や折り返しで変わるので、実測して本文の下余白に渡す。
+   決め打ちにすると機種によって広告や本文が隠れる。 */
+/* ===== 届いた符号を読む =====
+   共有リンクで来た人は「読みたい」だけ。最初の画面で文と音まで届けて、
+   そのあとで「自分でも打ってみる」へつなぐ。初めて触る人と同じ道に合流させる。 */
+let decWa = false;
+function renderDec(){
+  const r = fromMorse($('decIn').value, decWa);
+  const box = $('decOut');
+  if (!r.text) { box.innerHTML = '<span class="ph ph-pic"><img src="/img/empty-listen.webp" width="240" height="155" alt="" loading="lazy" decoding="async"><span>受け取った符号を貼ると、ここに文が出ます</span></span>'; return; }
+  box.innerHTML = esc(r.text) + (r.bad
+    ? '<div class="bad">「?」はこの表にない組み合わせです。' + (decWa ? '欧文' : '和文') + 'に切り替えると読めるかも</div>' : '');
+}
+function esc(t){ return String(t).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function decMorse(){
+  return $('decIn').value.replace(/[・･]/g, '.').replace(/[－ー―‐]/g, '-')
+    .replace(/[／]/g, ' / ').replace(/[　]/g, ' ');
+}
+/* 符号そのものを鳴らす。和文は欧文の表では鳴らせないため、文字ではなく符号を再生する。 */
+function playMorseRaw(str, btn){
+  if (!soundOn()) return;
+  const c = ac(); if (!c || !str) return;
+  if (c.state === 'suspended') c.resume();
+  let t = c.currentTime + 0.05;
+  for (const tok of str.split(/\s+/)) {
+    if (tok === '/' || tok === '') { t += 7 * UNIT / 1000; continue; }
+    for (const k of tok) {
+      if (k !== '.' && k !== '-') continue;
+      beep(k === '.' ? 1 : 3, t);
+      t += (k === '.' ? 1 : 3) * UNIT / 1000 + UNIT / 1000;
+    }
+    t += 2 * UNIT / 1000;
+  }
+  if (btn) { const o = btn.textContent; btn.textContent = '再生中…';
+    setTimeout(() => { btn.textContent = o; }, (t - c.currentTime) * 1000 + 120); }
+}
+$('decIn').addEventListener('input', renderDec);
+$('dKind').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  decWa = b.dataset.w === '1';
+  [...$('dKind').children].forEach(x => x.setAttribute('aria-pressed', x === b));
+  renderDec();
+});
+$('dPlay').onclick = () => { const a = ac(); if (a && a.state === 'suspended') a.resume();
+  if (!$('sound').checked) $('sound').checked = true; playMorseRaw(decMorse(), $('dPlay')); };
+/* 読んだ文を、そのまま自分で打ってみる材料にする */
+$('dUse').onclick = () => {
+  const t = fromMorse($('decIn').value, decWa).text.replace(/\?/g, '');
+  if (!t) return;
+  $('msgIn').value = t; text = t; path = ''; stopAuto(); renderRev(); drawTree();
+  $('msgIn').scrollIntoView({behavior:'smooth', block:'center'});
+};
+
+/* 共有リンクから来た人を、ページの一番上で迎える。 */
+(function fromLink(){
+  const q = new URLSearchParams(location.search);
+  const m = q.get('m');
+  if (!m || !/^[.\-_]+$/.test(m)) return;
+  decWa = q.get('w') === '1';
+  [...$('dKind').children].forEach(x => x.setAttribute('aria-pressed', (x.dataset.w === '1') === decWa));
+  const shown = m.replace(/__/g, ' / ').replace(/_/g, ' ').replace(/\./g, '・').replace(/-/g, '－');
+  $('decIn').value = shown; renderDec();
+  // 専用のブロックは作らず、もともとある「届いた符号を読む」に入れて
+  // そこを開いた位置にする。画面に別物が増えないほうが分かりやすい。
+  $('read').scrollIntoView({block:'start'});
+  addEventListener('load', () => $('read').scrollIntoView({block:'start'}));
+  // ブラウザは操作なしに音を鳴らせない。最初のタップで一度だけ鳴らす。
+  const raw = shown.replace(/[・]/g, '.').replace(/[－]/g, '-');
+  const once = () => {
+    removeEventListener('pointerdown', once, true); removeEventListener('keydown', once, true);
+    playMorseRaw(raw);
+  };
+  addEventListener('pointerdown', once, true);
+  addEventListener('keydown', once, true);
+})();
+
+(function dockPad(){
+  const dock = $('keydock');
+  const apply = () => {
+    const fixed = getComputedStyle(dock).position === 'fixed';
+    document.documentElement.style.setProperty('--dock', fixed ? (dock.offsetHeight + 28) + 'px' : '0px');
+  };
+  apply();
+  if (window.ResizeObserver) new ResizeObserver(apply).observe(dock);
+  addEventListener('resize', apply);
+  addEventListener('orientationchange', () => setTimeout(apply, 200));
+})();
+
+/* 電鍵の台座は「打つ・送る」の欄が画面に入っている間だけ出す（スマホで下に固定しているときだけ効く） */
+(function dockShow(){
+  const dock = $('keydock'), send = $('send');
+  if (!dock || !send || !window.IntersectionObserver) return;
+  new IntersectionObserver(es => {
+    const on = es[es.length - 1].isIntersecting;
+    dock.classList.toggle('dock-off', !on);
+  }, { rootMargin: '0px 0px -30% 0px' }).observe(send);
+})();
+
+(function wireKey(){
+  const k = $('keyBtn');
+  k.addEventListener('pointerdown', keyDown);
+  k.addEventListener('pointerup', keyUp);
+  k.addEventListener('pointercancel', keyUp);
+  k.addEventListener('pointerleave', (e) => { if (keyDownAt) keyUp(e); });
+  k.addEventListener('contextmenu', (e) => e.preventDefault());
+})();
+
+/* ===== 配線 ===== */
+$('btnSpace').onclick = () => { text += ' '; render(); };
+$('btnDel').onclick   = () => { text = text.slice(0, -1); render(); };
+$('btnPlay').onclick = () => {
+  // 音をオフにしたまま押されると無反応に見えるので、その場でオンにする
+  if (!$('sound').checked) { $('sound').checked = true; }
+  playMorseStr(lastMorse);
+};
+// 直接打ち込んだときも text を正とする。電鍵の打ちかけは捨てる（別物が混ざるため）。
+$('msgIn').addEventListener('input', () => { stopAuto(); path = ''; text = $('msgIn').value; renderRev(); drawTree(); });
+document.querySelectorAll('.tabs button').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.tabs button').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); renderGrid(b.dataset.set);
+  };
+});
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === '.' || e.key === '・') { push('.'); e.preventDefault(); }
+  else if (e.key === '-' || e.key === '_') { push('-'); e.preventDefault(); }
+  else if (e.key === 'Enter') { fix(); e.preventDefault(); }
+  else if (e.key === 'Backspace') { stopAuto(); path ? (path = path.slice(0, -1)) : (text = text.slice(0, -1)); render(); e.preventDefault(); }
+  else if (e.key === ' ') { text += ' '; render(); e.preventDefault(); }
+});
+
+renderGrid('alpha');
+render();
+
+// 広告は画面に近づいてから読み込む（規約準拠の遅延読込）
+(function mountAd(){
+  const slot = document.getElementById('ad-after-out');
+  if (!slot) return;
+  let done = false;
+  const load = () => { if (done) return; done = true;
+    try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {} };
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((es) => {
+      es.forEach(e => { if (e.isIntersecting) { load(); io.disconnect(); } });
+    }, { rootMargin: '300px 0px' });
+    io.observe(slot);
+  } else { load(); }
+})();
+
+</script>
+
+
+<!-- WEBNINJA_RELATED_APPS -->
+<div class="kkp-rel" style="max-width:680px;margin:2rem auto 0;padding:1rem 1.2rem;background:#fffcf7;border:1px solid #f0e6d2;border-radius:12px;font-family:inherit;">
+  <div>あわせて使えるアプリ</div>
+  <div class="k-map"><div class="k-map-core"><span>頭と指の練習</span></div><div class="k-map-b"><div class="k-map-br"><p class="k-map-h">文字を打つ</p><a class="k-link" href="https://yukkuri-typing.kkpwebninja.com/">ゆっくりタイピング</a><a class="k-link" href="https://yukkuri-flick.kkpwebninja.com/">ゆっくりフリック入力</a><a class="k-link" href="https://muscletyping.kkpwebninja.com/">マッスルおじさんタイピング</a></div><div class="k-map-br"><p class="k-map-h">数で考える</p><a class="k-link" href="https://soroban.kkpwebninja.com/">そろばんスパーク</a><a class="k-link" href="https://nanpure.kkpwebninja.com/">忍者ナンプレ</a><a class="k-link" href="https://ninja-gate.kkpwebninja.com/">忍者ゲート突破</a></div><div class="k-map-br"><p class="k-map-h">家族で遊ぶ</p><a class="k-link" href="https://karuta.kkpwebninja.com/">かるた読み上げ</a><a class="k-link" href="https://gesture.kkpwebninja.com/">ジェスチャーおでこ当て</a><a class="k-link" href="https://ito.kkpwebninja.com/">ito お題と数字の配布</a></div></div></div>
+</div>
+
+<!-- WEBNINJA_UNIFIED_FOOTER -->
+<footer style="text-align:center;padding:2rem 1rem 2.5rem;font-size:.875rem;color:#607490;line-height:2;border-top:1px solid #f0e6d2;margin-top:2.5rem;background:#fffcf7;">
+  <div style="font-weight:800;color:#8b6b3d;font-size:.875rem;margin-bottom:0.4rem;">web忍者の砦</div>
+  <div>
+    <a href="https://kkpwebninja.com/" target="_blank" rel="noopener" style="color:#8b6b3d;text-decoration:none;margin:0 0.5rem;">本丸トップ</a>·
+    <a href="https://privacypolicy.kkpwebninja.com/" target="_blank" rel="noopener" style="color:#8b6b3d;text-decoration:none;margin:0 0.5rem;">プライバシーポリシー</a>·
+    <a href="https://kkpwebninja.com/otoiawase" target="_blank" rel="noopener" style="color:#8b6b3d;text-decoration:none;margin:0 0.5rem;">お問い合わせ</a>
+  </div>
+  <div style="margin-top:0.5rem;color:#846e40;">© 2025-2026 web忍者の砦</div>
+</footer>
+</body>
+</html>
