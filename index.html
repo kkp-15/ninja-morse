@@ -437,12 +437,25 @@ section.card,section#read.card,section#list.card{background:none;border:0;border
 .bk-ku a{font-weight:800;color:var(--k-sumi)}
 </style>
 <!-- kkp-rel-d4:end -->
+<style id="b3-send-first">
+/* 2026-11-11 B3: 図の説明は図の下・PCは図と操作を左右に並べ、電鍵と入力欄を1画面目に */
+.sg-l .legend2{margin:6px 0 10px}
+@media(min-width:900px){
+  #send .sg{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
+  #send .sg-r .keydock{margin-top:0}
+}
+/* 104: 送るボタン */
+.shr{grid-template-columns:1.4fr 1fr}
+#shS{background:var(--k-btn-main,#f26a1b);color:#fff;border:var(--k-bw-s,2px) solid var(--k-sumi,#2a211b);font-size:16px;min-height:48px}
+#shC{min-height:48px}
+.quiz p{font-size:15px;font-weight:500;letter-spacing:0;margin:0 0 8px;line-height:1.6}
+.quiz button{font:inherit;font-size:15px;font-weight:700;min-height:44px;padding:0 16px;background:#fff;color:var(--k-sumi,#2a211b);border:var(--k-bw-s,2px) solid var(--k-sumi,#2a211b);border-radius:8px;cursor:pointer}
+</style>
 </head>
 <body class="k-page">
 <header>
   <img class="d4-ninja" src="/kit/img/d4-ninja.webp" alt="" aria-hidden="true">
   <h1>モールス信号を送り合う</h1>
-  <p>打って、音を確かめて、そのまま送る。届いた符号は貼れば読めます</p>
 
 </header>
 
@@ -450,9 +463,11 @@ section.card,section#read.card,section#list.card{background:none;border:0;border
 
   <section class="card" id="send">
     <h2>打つ・送る</h2>
+    <div class="sg"><div class="sg-l">
+    <div class="treewrap"><div class="tree" id="tree"></div></div>
     <p class="legend2"><b><i class="d"></i>短い線</b>＝トン　<b><i class="h"></i>長い線</b>＝ツー　
     たどった先の丸がその文字。<b>4打目より先</b>は<a href="#list">一覧表</a>へ。</p>
-    <div class="treewrap"><div class="tree" id="tree"></div></div>
+    </div><div class="sg-r">
     <div class="keydock" id="keydock">
     <div class="bar off" id="bar"><i></i></div>
     <div class="key">
@@ -475,12 +490,13 @@ section.card,section#read.card,section#list.card{background:none;border:0;border
       <div class="revout" id="revOut"><span class="ph">打つと、ここに符号が出ます</span></div>
         <button type="button" id="btnPlay" class="hear k-btn k-btn-main"><span class="ico"></span>音で聞く</button>
       <p class="mnote" id="wKind"></p>
-      <p class="mnote" id="wNote">送ると、受け取った人はリンクを開くだけで同じ音を聞けます。</p>
+      <p class="mnote" id="wNote">送ると、受け取った人はリンクを開いて音を聞き、なんと書いてあるか当てられます。</p>
       <div class="shr" id="wShare" hidden>
-        <a id="shL" href="#" target="_blank" rel="noopener">LINEで送る</a>
+        <button type="button" id="shS">この符号を送る</button>
         <button type="button" id="shC">リンクをコピー</button>
       </div>
       <p class="note">キーボードでも打てます: <b>・</b>点 / <b>-</b>線 / Backspace戻す　<a href="#read">届いた符号を読む →</a></p>
+    </div></div>
   </section>
 
 
@@ -903,10 +919,22 @@ function renderRev(){
     + '　' + raw.length + '文字 → ' + n + '符号';
   $('wNote').textContent = miss
     ? '×の字は送れません。モールスには漢字の符号がないので、ひらがな・カタカナ・英数字にしてください。'
-    : '送ると、受け取った人はリンクを開くだけで同じ音を聞けます。';
-  $('shL').href = 'https://social-plugins.line.me/lineit/share?url=' + encodeURIComponent(shareUrl(lastMorse, lastWa))
-                + '&text=' + encodeURIComponent(symbols + '\nモールス信号で書きました。リンクを開くと文と音になります');
+    : '送ると、受け取った人はリンクを開いて音を聞き、なんと書いてあるか当てられます。';
+  lastSymbols = symbols;
 }
+let lastSymbols = '';
+/* 送るのは1つのボタンで。スマホは共有の画面（LINE・メールなど）、無い端末はリンクをコピー */
+$('shS').onclick = async () => {
+  const url = shareUrl(lastMorse, lastWa);
+  const text = lastSymbols + '\nモールス信号です。開くと音が鳴ります。なんと書いてあるか当ててみて';
+  try { if (typeof gtag === 'function') gtag('event', 'morse_send', { wabun: lastWa ? 1 : 0 }); } catch (e) {}
+  if (navigator.share) {
+    try { await navigator.share({ text, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  try { await navigator.clipboard.writeText(text + '\n' + url); $('shS').textContent = 'リンクをコピーしました'; }
+  catch (e) { $('shS').textContent = 'コピーできません'; }
+  setTimeout(() => { $('shS').textContent = 'この符号を送る'; }, 1800);
+};
 
 
 function esc(t){ return t.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
@@ -1030,6 +1058,11 @@ function renderDec(){
   const r = fromMorse($('decIn').value, decWa);
   const box = $('decOut');
   if (!r.text) { box.innerHTML = '<span class="ph ph-pic"><img src="/img/empty-listen.webp" width="240" height="155" alt="" loading="lazy" decoding="async"><span>受け取った符号を貼ると、ここに文が出ます</span></span>'; return; }
+  if (decQuiz) {
+    box.innerHTML = '<div class="quiz"><p>届いたモールスです。「音で聞く」で鳴らして、なんと書いてあるか当ててみてください（' + r.text.replace(/\s/g, '').length + '文字）。</p><button type="button" id="dShow">答えを見る</button></div>';
+    $('dShow').onclick = () => { decQuiz = false; renderDec(); try { if (typeof gtag === 'function') gtag('event', 'morse_answer_open', {}); } catch (e) {} };
+    return;
+  }
   box.innerHTML = esc(r.text) + (r.bad
     ? '<div class="bad">「?」はこの表にない組み合わせです。' + (decWa ? '欧文' : '和文') + 'に切り替えると読めるかも</div>' : '');
 }
@@ -1056,7 +1089,8 @@ function playMorseRaw(str, btn){
   if (btn) { const o = btn.textContent; btn.textContent = '再生中…';
     setTimeout(() => { btn.textContent = o; }, (t - c.currentTime) * 1000 + 120); }
 }
-$('decIn').addEventListener('input', renderDec);
+let decQuiz = false;
+$('decIn').addEventListener('input', () => { decQuiz = false; renderDec(); });
 $('dKind').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   decWa = b.dataset.w === '1';
@@ -1081,7 +1115,7 @@ $('dUse').onclick = () => {
   decWa = q.get('w') === '1';
   [...$('dKind').children].forEach(x => x.setAttribute('aria-pressed', (x.dataset.w === '1') === decWa));
   const shown = m.replace(/__/g, ' / ').replace(/_/g, ' ').replace(/\./g, '・').replace(/-/g, '－');
-  $('decIn').value = shown; renderDec();
+  $('decIn').value = shown; decQuiz = true; renderDec();
   // 専用のブロックは作らず、もともとある「届いた符号を読む」に入れて
   // そこを開いた位置にする。画面に別物が増えないほうが分かりやすい。
   $('read').scrollIntoView({block:'start'});
