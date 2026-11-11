@@ -509,7 +509,7 @@ section.card,section#read.card,section#list.card{background:none;border:0;border
       <button type="button" data-w="1" aria-pressed="false">和文（カタカナ）</button>
     </div>
     <div class="rev"><input id="decIn" type="text" placeholder="・－・ でも .-. でも貼れます" autocomplete="off"></div>
-    <div class="decout" id="decOut"><span class="ph ph-pic"><img src="/img/empty-listen.webp" width="240" height="155" alt="" loading="lazy" decoding="async"><span>受け取った符号を貼ると、ここに文が出ます</span></span></div>
+    <div class="decout" id="decOut"><span class="ph ph-pic"><img src="/img/shiba-morse.webp" width="240" height="253" alt="柴犬の忍者" loading="lazy" decoding="async"><span>受け取った符号を貼ると、ここに文が出ます</span></span></div>
     <div class="outbtns">
       <button type="button" id="dPlay">音で聞く</button>
       <button type="button" id="dUse">この文を打ってみる</button>
@@ -1057,7 +1057,7 @@ let decWa = false;
 function renderDec(){
   const r = fromMorse($('decIn').value, decWa);
   const box = $('decOut');
-  if (!r.text) { box.innerHTML = '<span class="ph ph-pic"><img src="/img/empty-listen.webp" width="240" height="155" alt="" loading="lazy" decoding="async"><span>受け取った符号を貼ると、ここに文が出ます</span></span>'; return; }
+  if (!r.text) { box.innerHTML = '<span class="ph ph-pic"><img src="/img/shiba-morse.webp" width="240" height="253" alt="柴犬の忍者" loading="lazy" decoding="async"><span>受け取った符号を貼ると、ここに文が出ます</span></span>'; return; }
   if (decQuiz) {
     box.innerHTML = '<div class="quiz"><p>届いたモールスです。「音で聞く」で鳴らして、なんと書いてあるか当ててみてください（' + r.text.replace(/\s/g, '').length + '文字）。</p><button type="button" id="dShow">答えを見る</button></div>';
     $('dShow').onclick = () => { decQuiz = false; renderDec(); try { if (typeof gtag === 'function') gtag('event', 'morse_answer_open', {}); } catch (e) {} };
